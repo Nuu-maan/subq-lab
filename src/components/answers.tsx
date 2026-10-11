@@ -23,6 +23,20 @@ function Percent({ value }: { value: number }) {
   return <NumberFlow value={value} format={percent} className="tabular-nums" />;
 }
 
+function Row({ label, value, strong }: { label: string; value: number; strong: boolean }) {
+  return (
+    <li className="flex flex-col gap-1.5 text-sm">
+      <span className="flex items-baseline justify-between gap-3">
+        <span className={clsx("break-words", strong ? "font-medium text-fg" : "text-fg-secondary")}>{label}</span>
+        <span className="text-fg-secondary">
+          <Percent value={value} />
+        </span>
+      </span>
+      <Bar value={value} strong={strong} />
+    </li>
+  );
+}
+
 function NoulView({ answer }: { answer: NoulAnswer }) {
   const yes = answer.noul >= 0.5;
   return (
@@ -43,17 +57,9 @@ function ChoiceView({ answer, labels }: { answer: ChoiceAnswer; labels?: Record<
   return (
     <>
       <p className="text-2xl font-semibold tracking-tight text-balance">{labels?.[answer.choice] ?? humanize(answer.choice)}</p>
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-2.5">
         {rows.map(([option, probability]) => (
-          <li key={option} className="grid grid-cols-[minmax(0,9rem)_1fr_3rem] items-center gap-3 text-sm">
-            <span className={clsx("break-words", option === answer.choice ? "font-medium text-fg" : "text-fg-secondary")}>
-              {labels?.[option] ?? humanize(option)}
-            </span>
-            <Bar value={probability} strong={option === answer.choice} />
-            <span className="text-right text-fg-secondary">
-              <Percent value={probability} />
-            </span>
-          </li>
+          <Row key={option} label={labels?.[option] ?? humanize(option)} value={probability} strong={option === answer.choice} />
         ))}
       </ul>
     </>
@@ -71,13 +77,9 @@ function ScoreView({ answer }: { answer: ScoreAnswer }) {
           <NumberFlow value={answer.score} format={{ maximumFractionDigits: 2 }} className="tabular-nums" /> on a 0–{levels - 1} scale
         </span>
       </p>
-      <Bar value={levels > 1 ? answer.score / (levels - 1) : 0} strong />
-      <ol className="grid gap-2 text-xs" style={{ gridTemplateColumns: `repeat(${levels}, minmax(0, 1fr))` }}>
+      <ol className="flex flex-col gap-2.5">
         {Object.entries(answer.legend).map(([level, label]) => (
-          <li key={level} className={clsx("flex flex-col gap-0.5", label === nearest ? "text-fg" : "text-fg-tertiary")}>
-            <span className="break-words">{label}</span>
-            <Percent value={answer.probabilities[level] ?? 0} />
-          </li>
+          <Row key={level} label={label} value={answer.probabilities[level] ?? 0} strong={label === nearest} />
         ))}
       </ol>
     </>
