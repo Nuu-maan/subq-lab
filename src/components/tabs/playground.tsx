@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { useState } from "react";
 import { AnswerCard, UsageLine } from "@/components/answers";
 import { ImagePicker } from "@/components/image-picker";
-import { Button, Chip, EmptyState, Label, LiveStatus, Panel, PanelHeading, fieldClass, humanize } from "@/components/ui";
+import { Button, Chip, EmptyState, Intro, Label, LiveStatus, Panel, SectionLabel, fieldClass, humanize } from "@/components/ui";
 import type { PickedImage } from "@/lib/image";
 import { useDecide } from "@/lib/use-decide";
 
@@ -60,8 +60,14 @@ export function PlaygroundTab() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div className="flex flex-col gap-12">
       <Panel aria-labelledby="playground-heading">
+        <SectionLabel id="playground-heading" title="Request" />
+        <Intro>
+          Edit the body sent to <code className="font-mono text-[13px] text-fg">POST /v1/systemone</code>. The model defaults to{" "}
+          <code className="font-mono text-[13px] text-fg">subq-snap-preview</code>; set <code className="font-mono text-[13px] text-fg">model</code> to
+          override it.
+        </Intro>
         <form
           className="flex flex-col gap-4"
           onSubmit={(event) => {
@@ -69,17 +75,7 @@ export function PlaygroundTab() {
             send();
           }}
         >
-          <PanelHeading
-            id="playground-heading"
-            title="Request playground"
-            description={
-              <>
-                Edit the body sent to <code className="font-mono text-fg">POST /v1/systemone</code>. The model defaults to subq-snap-preview; set{" "}
-                <code className="font-mono text-fg">model</code> to override it.
-              </>
-            }
-          />
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Example requests">
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Example requests">
             {Object.keys(PRESETS).map((name) => (
               <Chip
                 key={name}
@@ -98,22 +94,22 @@ export function PlaygroundTab() {
             <Label htmlFor="playground-body">Request body (JSON)</Label>
             <textarea
               id="playground-body"
-              rows={16}
+              rows={14}
               spellCheck={false}
               value={source}
               onChange={(event) => setSource(event.target.value)}
               aria-invalid={parseError ? true : undefined}
               aria-describedby={parseError ? "playground-error" : undefined}
-              className={clsx(fieldClass, "font-mono text-sm leading-relaxed sm:text-xs", parseError && "ring-danger")}
+              className={clsx(fieldClass, "font-mono text-[13px] leading-relaxed sm:text-[13px]", parseError && "outline-2 outline-danger")}
             />
             {parseError && (
-              <p id="playground-error" className="text-sm text-danger">
+              <p id="playground-error" className="text-[13px] text-danger">
                 {parseError}
               </p>
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-fg-secondary">Images (optional, added as the images field)</span>
+            <span className="text-[13px] font-medium">Images (optional, sent as the images field)</span>
             <ImagePicker images={images} onChange={setImages} />
           </div>
           <Button type="submit" variant="primary" pending={pending} className="self-start">
@@ -123,42 +119,36 @@ export function PlaygroundTab() {
       </Panel>
 
       <Panel aria-labelledby="playground-results" aria-busy={pending}>
-        <h2 id="playground-results" className="sr-only">
-          Response
-        </h2>
         <LiveStatus>{pending ? "Sending request…" : result ? `Response ${result.status} received.` : ""}</LiveStatus>
+        <SectionLabel
+          id="playground-results"
+          title="Response"
+          action={result?.data && <UsageLine ms={result.ms} tokens={result.data.usage.input_tokens + result.data.usage.output_tokens} />}
+        />
         {result ? (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <span
-                className={clsx(
-                  "rounded-full px-2.5 py-1 font-mono text-xs font-medium ring-1",
-                  result.error ? "text-danger ring-danger/40" : "text-accent ring-accent/40",
-                )}
-              >
-                HTTP {result.status || "—"} {result.error ? "error" : "OK"}
-              </span>
-              {result.data && <UsageLine ms={result.ms} tokens={result.data.usage.input_tokens + result.data.usage.output_tokens} />}
-            </div>
-            {result.error && <p className="text-sm text-pretty text-danger">{result.error}</p>}
+          <div className="flex flex-col gap-3">
+            <p className="inline-flex w-fit items-center gap-2 rounded-lg bg-surface px-2.5 py-1 text-[13px]">
+              <span aria-hidden="true" className={clsx("size-1.5 rounded-full", result.error ? "bg-danger" : "bg-success")} />
+              <span className="font-mono font-medium">HTTP {result.status || "—"}</span>
+              <span className="text-fg-secondary">{result.error ? "Error" : "OK"}</span>
+            </p>
+            {result.error && <p className="text-[13px] text-pretty text-danger">{result.error}</p>}
             {result.data && (
-              <div className="grid items-start gap-3 sm:grid-cols-2">
+              <div className="grid items-start gap-2 sm:grid-cols-2">
                 {Object.entries(result.data.answers).map(([key, answer], index) => (
                   <AnswerCard key={key} title={humanize(key)} answer={answer} index={index} />
                 ))}
               </div>
             )}
-            <details className="group rounded-2xl bg-raised ring-1 ring-line" open={!result.data}>
-              <summary className="cursor-pointer rounded-2xl px-4 py-3 text-sm font-medium">Raw response</summary>
-              <pre className="max-h-96 overflow-auto px-4 pb-4 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-fg-secondary">
+            <details className="rounded-2xl bg-surface" open={!result.data}>
+              <summary className="cursor-pointer rounded-2xl px-5 py-3.5 text-[13px] font-medium">Raw response</summary>
+              <pre className="max-h-96 overflow-auto px-5 pb-5 font-mono text-[12px] leading-relaxed break-words whitespace-pre-wrap text-fg-secondary">
                 {pretty(result.raw)}
               </pre>
             </details>
           </div>
         ) : (
-          <EmptyState title="No request sent yet">
-            Start from an example, edit the JSON, then select Send request. Try Invalid request to see how errors come back.
-          </EmptyState>
+          <EmptyState title="No request sent yet">Start from an example, edit the JSON, then select Send request. Try Invalid request to see an error.</EmptyState>
         )}
       </Panel>
     </div>
