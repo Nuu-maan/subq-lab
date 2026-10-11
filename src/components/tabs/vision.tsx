@@ -109,7 +109,7 @@ export function VisionTab() {
     <Split
       input={
         <>
-          <TaskHeader step="Task 03 · Vision" title="Check images">
+          <TaskHeader step="Task 03 · Photos" title="Check a photo">
             Add up to four images and choose what SubQ should look for. A photo of your GPU or your current build works well.
           </TaskHeader>
           <form
@@ -173,7 +173,9 @@ export function VisionTab() {
               ))}
             </AnswerGrid>
           ) : (
-            <Waiting title="No images checked yet">Add an image, choose a check, then select Check image. The answers land here.</Waiting>
+            <Waiting title="The answers will show up here">
+              Add a photo and choose what to check. You&rsquo;ll see what SubQ thinks is in it, with a percentage for each answer.
+            </Waiting>
           )}
         </Panel>
       }

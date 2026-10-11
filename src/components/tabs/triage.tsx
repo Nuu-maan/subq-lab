@@ -59,7 +59,7 @@ export function TriageTab() {
     <Split
       input={
         <>
-          <TaskHeader step="Task 02 · Support" title="Triage a ticket">
+          <TaskHeader step="Task 02 · Support" title="Triage a support ticket">
             Paste a customer message. SubQ decides who owns it, how urgent it is and whether a person should step in.
           </TaskHeader>
           <form
@@ -113,7 +113,10 @@ export function TriageTab() {
               ))}
             </AnswerGrid>
           ) : (
-            <Waiting title="Nothing triaged yet">Pick a sample or paste your own message, then select Triage ticket. The answers land here.</Waiting>
+            <Waiting title="The answers will show up here">
+              You&rsquo;ll see who should handle the ticket, how urgent it is, how upset the customer is and whether a person needs to step in,
+              each with a percentage.
+            </Waiting>
           )}
         </Panel>
       }
