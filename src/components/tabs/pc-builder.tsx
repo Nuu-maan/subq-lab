@@ -4,7 +4,7 @@ import NumberFlow from "@number-flow/react";
 import clsx from "clsx";
 import { useState, type CSSProperties } from "react";
 import { toast } from "sonner";
-import { Button, Chip, EmptyState, Label, LiveStatus, Panel, PanelHeading, fieldClass } from "@/components/ui";
+import { Button, Chip, EmptyState, Intro, Label, LiveStatus, Panel, SectionLabel, fieldClass } from "@/components/ui";
 import { PRICES_NOTE, amazonUrl, solve, type Build, type Needs } from "@/lib/pc";
 import { certainty, type Answer, type ChoiceAnswer, type NoulAnswer, type Question, type ScoreAnswer } from "@/lib/subq";
 import { decide } from "@/lib/use-decide";
@@ -157,26 +157,27 @@ export function PcBuilderTab() {
   const pending = phase !== "idle";
   const selectedIndex = Math.max(0, OPTIONS.indexOf(selected));
   const build = plan?.builds[selectedIndex];
+  const only = plan?.builds.length === 1;
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-      <Panel aria-labelledby="pc-heading" className="self-start">
+    <div className="flex flex-col gap-12">
+      <Panel aria-labelledby="pc-heading">
+        <SectionLabel id="pc-heading" title="Your build" />
+        <Intro>
+          Describe what you play. SubQ reads your needs, a solver finds compatible builds under budget from real Amazon.in listings, then SubQ
+          picks the best fit.
+        </Intro>
         <form
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-5"
           onSubmit={(event) => {
             event.preventDefault();
             planBuild();
           }}
         >
-          <PanelHeading
-            id="pc-heading"
-            title="Gaming PC planner"
-            description="Describe what you play. SubQ reads your needs, a solver finds compatible builds under budget, then SubQ picks the best fit."
-          />
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1">
             <div className="flex items-baseline justify-between gap-3">
               <Label htmlFor="budget">Budget</Label>
-              <output htmlFor="budget" className="text-lg font-semibold tabular-nums">
+              <output htmlFor="budget" className="text-ui font-medium tabular-nums">
                 <NumberFlow value={budget} format={inr} locales="en-IN" />
               </output>
             </div>
@@ -188,22 +189,22 @@ export function PcBuilderTab() {
               step={1000}
               value={budget}
               onChange={(event) => setBudget(Number(event.target.value))}
-              className="h-10 w-full cursor-pointer accent-accent"
+              className="h-8 w-full cursor-pointer accent-solid"
             />
-          </div>
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Example requests">
-            {PRESETS.map((preset) => (
-              <Chip key={preset.label} selected={request === preset.text} onClick={() => setRequest(preset.text)}>
-                {preset.label}
-              </Chip>
-            ))}
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="pc-request">What will you use it for?</Label>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Example requests">
+              {PRESETS.map((preset) => (
+                <Chip key={preset.label} selected={request === preset.text} onClick={() => setRequest(preset.text)}>
+                  {preset.label}
+                </Chip>
+              ))}
+            </div>
             <textarea
               id="pc-request"
               required
-              rows={6}
+              rows={5}
               value={request}
               onChange={(event) => setRequest(event.target.value)}
               placeholder="Mostly AAA games at 1440p, some Valorant. Need Wi-Fi."
@@ -215,198 +216,172 @@ export function PcBuilderTab() {
               Plan my build
             </Button>
             {pending && (
-              <span className="text-sm text-fg-secondary">{phase === "reading" ? "Reading your request…" : "Comparing builds…"}</span>
+              <span className="text-[13px] text-fg-secondary">{phase === "reading" ? "Reading your request…" : "Comparing builds…"}</span>
             )}
           </div>
-          <p className="text-xs text-pretty text-fg-tertiary">{PRICES_NOTE} Excludes monitor, peripherals and Windows.</p>
         </form>
       </Panel>
 
-      <Panel aria-labelledby="pc-results" aria-busy={pending}>
-        <h2 id="pc-results" className="sr-only">
-          Build plan
-        </h2>
-        <LiveStatus>
-          {phase === "reading" ? "Reading your request…" : phase === "comparing" ? "Comparing builds…" : plan ? (plan.builds.length > 1 ? `SubQ picked option ${plan.pick.choice}.` : "One build fits your budget.") : ""}
-        </LiveStatus>
+      <LiveStatus>
+        {phase === "reading"
+          ? "Reading your request…"
+          : phase === "comparing"
+            ? "Comparing builds…"
+            : plan
+              ? only
+                ? "One build fits your budget."
+                : `SubQ picked option ${plan.pick.choice}.`
+              : ""}
+      </LiveStatus>
 
-        {shortfall && (
-          <EmptyState title={`Nothing compatible fits ${formatInr(shortfall.budget)}`}>
-            The cheapest build for these needs costs {formatInr(shortfall.cheapest)}. Raise the budget or relax a requirement such as Wi-Fi or storage.
-          </EmptyState>
-        )}
+      {shortfall && (
+        <EmptyState title={`Nothing compatible fits ${formatInr(shortfall.budget)}`}>
+          The cheapest build for these needs costs {formatInr(shortfall.cheapest)}. Raise the budget or relax a requirement such as Wi-Fi or storage.
+        </EmptyState>
+      )}
 
-        {!shortfall && !plan && (
-          <EmptyState title="No build planned yet">Set your budget, describe how you&rsquo;ll use the PC, then select Plan my build.</EmptyState>
-        )}
+      {!shortfall && !plan && (
+        <EmptyState title="No build planned yet">Set your budget, describe how you&rsquo;ll use the PC, then select Plan my build.</EmptyState>
+      )}
 
-        {!shortfall && plan && build && (
-          <div className="flex flex-col gap-6">
-            <section aria-labelledby="pc-reading" className="flex flex-col gap-3">
-              <h3 id="pc-reading" className="text-sm font-medium text-fg-secondary">
-                How SubQ read your request
-              </h3>
-              <ul className="flex flex-wrap gap-2">
-                {plan.readings.map((reading, index) => (
-                  <li
-                    key={reading.label}
-                    className="rise flex items-baseline gap-1.5 rounded-full bg-raised px-3 py-1.5 text-sm ring-1 ring-line"
-                    style={{ "--i": index } as CSSProperties}
+      {!shortfall && plan && build && (
+        <>
+          <Panel aria-labelledby="pc-reading" aria-busy={pending}>
+            <SectionLabel id="pc-reading" title="How SubQ read you" count={plan.readings.length} />
+            <ul className="flex flex-wrap gap-1.5">
+              {plan.readings.map((reading, index) => (
+                <li
+                  key={reading.label}
+                  className="rise flex items-baseline gap-1.5 rounded-lg bg-surface px-2.5 py-1 text-[13px]"
+                  style={{ "--i": index } as CSSProperties}
+                >
+                  <span className="text-fg-secondary">{reading.label}</span>
+                  <span className="font-medium">{reading.value}</span>
+                  <span className="text-fg-secondary tabular-nums">{Math.round(reading.probability * 100)}%</span>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+
+          <Panel aria-labelledby="pc-options">
+            <SectionLabel id="pc-options" title="Builds" count={plan.builds.length} />
+            {only && (
+              <Intro>Only one compatible build fits this budget at today&rsquo;s prices. Raise the budget or drop Wi-Fi to see alternatives.</Intro>
+            )}
+            <fieldset className="-mx-3 flex flex-col">
+              <legend className="sr-only">Choose a build</legend>
+              {plan.builds.map((option, index) => {
+                const letter = OPTIONS[index];
+                const fit = plan.pick.probabilities[letter] ?? 0;
+                const value = plan.value[letter];
+                const picked = plan.pick.choice === letter;
+                return (
+                  <label
+                    key={option.id}
+                    className="rise flex cursor-pointer items-center gap-3.5 rounded-xl px-3 py-3 transition-colors duration-150 hover:bg-surface has-checked:bg-surface has-focus-visible:outline-2 has-focus-visible:outline-fg"
+                    style={{ "--i": index + 2 } as CSSProperties}
                   >
-                    <span className="text-fg-tertiary">{reading.label}</span>
-                    <span className="font-medium">{reading.value}</span>
-                    <span className="text-xs text-fg-tertiary tabular-nums">{Math.round(reading.probability * 100)}%</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            <fieldset className="flex flex-col gap-3">
-              <legend className="mb-3 text-sm font-medium text-fg-secondary">Build options</legend>
-              {plan.builds.length === 1 && (
-                <p className="text-sm text-pretty text-fg-secondary">
-                  Only one compatible build fits this budget at today&rsquo;s prices. Raise the budget or drop Wi-Fi to see alternatives.
-                </p>
-              )}
-              <div className="grid gap-3 md:grid-cols-3">
-                {plan.builds.map((option, index) => {
-                  const letter = OPTIONS[index];
-                  const fit = plan.pick.probabilities[letter] ?? 0;
-                  const value = plan.value[letter];
-                  const picked = plan.pick.choice === letter;
-                  const only = plan.builds.length === 1;
-                  return (
-                    <label
-                      key={option.id}
-                      className="rise flex cursor-pointer flex-col gap-3 rounded-2xl bg-raised p-4 ring-1 ring-line transition-[box-shadow,scale] duration-150 ease-out motion-safe:active:scale-[0.98] has-checked:ring-2 has-checked:ring-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent hover:ring-line-strong"
-                      style={{ "--i": index + 2 } as CSSProperties}
+                    <input
+                      type="radio"
+                      name="build"
+                      value={letter}
+                      checked={selected === letter}
+                      onChange={() => setSelected(letter)}
+                      className="sr-only"
+                    />
+                    <span
+                      aria-hidden="true"
+                      className={clsx(
+                        "grid size-9 shrink-0 place-items-center rounded-lg text-[13px] font-medium",
+                        selected === letter ? "bg-solid text-on-solid" : "bg-raised text-fg",
+                      )}
                     >
-                      <input
-                        type="radio"
-                        name="build"
-                        value={letter}
-                        checked={selected === letter}
-                        onChange={() => setSelected(letter)}
-                        className="sr-only"
-                      />
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium">Option {letter}</span>
-                        {picked && (
-                          <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium whitespace-nowrap text-on-accent">
-                            {only ? "Only fit" : "SubQ\u2019s pick"}
-                          </span>
-                        )}
+                      {letter}
+                    </span>
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="flex flex-wrap items-center gap-x-2">
+                        <span className="text-ui font-medium">{option.gpu.name}</span>
+                        {picked && <span className="text-[13px] text-fg-secondary">{only ? "· only fit" : "· SubQ\u2019s pick"}</span>}
                       </span>
-                      <span className="flex flex-col gap-0.5 text-sm">
-                        <span className="font-medium text-pretty">{option.gpu.name}</span>
-                        <span className="text-pretty text-fg-secondary">
-                          {option.cpu.name} · {option.ramGb}GB
-                        </span>
+                      <span className="text-[13px] text-fg-secondary">
+                        {option.cpu.name} · {option.ramGb}GB · {value.legend[String(Math.round(value.score))].toLowerCase()} value
                       </span>
-                      <span className="text-xl font-semibold tracking-tight tabular-nums">{formatInr(option.total)}</span>
-                      <span className="flex flex-col gap-1.5">
-                        {!only && (
-                          <>
-                            <span className="flex justify-between text-xs text-fg-secondary">
-                              <span>Fit</span>
-                              <span className="tabular-nums">{Math.round(fit * 100)}%</span>
-                            </span>
-                            <span aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-track">
-                              <span className={clsx("bar block h-full rounded-full", picked ? "bg-accent" : "bg-bar")} style={{ "--p": fit } as CSSProperties} />
-                            </span>
-                          </>
-                        )}
-                        <span className="text-xs text-fg-secondary">Value: {value.legend[String(Math.round(value.score))]}</span>
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
+                    </span>
+                    <span className="flex shrink-0 flex-col items-end">
+                      <span className="text-ui font-medium tabular-nums">{formatInr(option.total)}</span>
+                      {!only && <span className="text-[13px] text-fg-secondary tabular-nums">{Math.round(fit * 100)}% fit</span>}
+                    </span>
+                  </label>
+                );
+              })}
             </fieldset>
+          </Panel>
 
-            <PartsTable build={build} budget={budget} />
-          </div>
-        )}
-      </Panel>
+          <PartsList build={build} budget={budget} />
+        </>
+      )}
     </div>
   );
 }
 
-function PartsTable({ build, budget }: { build: Build; budget: number }) {
-  const headroom = budget - build.total;
-
+function PartsList({ build, budget }: { build: Build; budget: number }) {
   async function copy() {
     try {
       await navigator.clipboard.writeText(partsListText(build, budget));
       toast.success("Parts list copied");
     } catch {
-      toast.error("Unable to copy. Select the table and copy it manually.");
+      toast.error("Unable to copy. Select the list and copy it manually.");
     }
   }
 
   return (
-    <section aria-labelledby="pc-parts" className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <h3 id="pc-parts" className="text-sm font-medium text-fg-secondary">
-          Parts list
-        </h3>
-        <Button type="button" onClick={copy}>
-          Copy parts list
-        </Button>
+    <Panel aria-labelledby="pc-parts">
+      <SectionLabel
+        id="pc-parts"
+        title="Parts"
+        count={build.parts.length}
+        action={
+          <button
+            type="button"
+            onClick={copy}
+            className="-mr-2 inline-flex min-h-9 items-center rounded-lg px-2 text-[13px] text-fg-secondary transition-colors duration-150 hover:text-fg"
+          >
+            Copy list
+          </button>
+        }
+      />
+      <ul className="-mx-3 flex flex-col">
+        {build.parts.map((part, index) => (
+          <li key={part.kind} className="rise" style={{ "--i": index } as CSSProperties}>
+            <a
+              href={amazonUrl(part.asin)}
+              target="_blank"
+              rel="noreferrer"
+              className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-150 hover:bg-surface"
+            >
+              <span className="flex min-w-0 flex-col sm:flex-row sm:items-baseline sm:gap-3">
+                <span className="shrink-0 text-[13px] text-fg-secondary sm:w-28">{part.kind}</span>
+                <span className="text-ui text-pretty">{part.name}</span>
+              </span>
+              <span aria-hidden="true" className="hidden h-px min-w-6 flex-1 bg-line sm:block" />
+              <span className="ml-auto shrink-0 text-ui tabular-nums sm:ml-0">{formatInr(part.price)}</span>
+              <span aria-hidden="true" className="shrink-0 text-[13px] text-fg-secondary transition-colors group-hover:text-fg">
+                ↗
+              </span>
+              <span className="sr-only">View on Amazon.in (opens in a new tab)</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <div className="flex items-baseline justify-between gap-3 border-t border-line pt-4">
+        <span className="text-[13px] text-fg-secondary">
+          Total · {formatInr(budget - build.total)} under budget
+        </span>
+        <span className="text-[17px] font-medium tabular-nums">
+          <NumberFlow value={build.total} format={inr} locales="en-IN" />
+        </span>
       </div>
-      <div className="relative overflow-x-auto rounded-2xl ring-1 ring-line">
-        <table className="w-full min-w-[32rem] text-left text-sm">
-          <thead className="bg-raised text-xs text-fg-tertiary">
-            <tr>
-              <th scope="col" className="px-4 py-2.5 font-medium">
-                Part
-              </th>
-              <th scope="col" className="px-4 py-2.5 font-medium">
-                Model
-              </th>
-              <th scope="col" className="px-4 py-2.5 text-right font-medium">
-                Price
-              </th>
-              <th scope="col" className="px-4 py-2.5 font-medium">
-                <span className="sr-only">Links</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {build.parts.map((part) => (
-              <tr key={part.kind}>
-                <th scope="row" className="px-4 py-2.5 font-normal whitespace-nowrap text-fg-secondary">
-                  {part.kind}
-                </th>
-                <td className="px-4 py-2.5">{part.name}</td>
-                <td className="px-4 py-2.5 text-right whitespace-nowrap tabular-nums">{formatInr(part.price)}</td>
-                <td className="px-4 py-2.5 text-right">
-                  <a
-                    href={amazonUrl(part.asin)}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`View ${part.name} on Amazon.in (opens in a new tab)`}
-                    className="whitespace-nowrap text-accent underline-offset-4 hover:underline"
-                  >
-                    View on Amazon.in
-                  </a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot className="bg-raised">
-            <tr>
-              <th scope="row" colSpan={2} className="px-4 py-3 font-medium">
-                Total · {formatInr(headroom)} under budget
-              </th>
-              <td className="px-4 py-3 text-right text-base font-semibold whitespace-nowrap tabular-nums">
-                <NumberFlow value={build.total} format={inr} locales="en-IN" />
-              </td>
-              <td />
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </section>
+      <p className="text-[13px] text-pretty text-fg-secondary">{PRICES_NOTE} Excludes monitor, peripherals and Windows.</p>
+    </Panel>
   );
 }
