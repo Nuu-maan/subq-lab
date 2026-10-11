@@ -11,7 +11,7 @@ import {
 } from "langchain";
 import { shoppingClient } from "./shopping-mcp";
 
-export const DEFAULT_MODELS = ["google/gemma-4-31b-it:free", "nvidia/nemotron-3-super-120b-a12b:free", "thinkingmachines/inkling:free"];
+export const DEFAULT_MODELS = ["nvidia/nemotron-3-super-120b-a12b:free", "nvidia/nemotron-3.5-lightning:free", "google/gemma-4-31b-it:free"];
 
 const AGENT_TOOLS = new Set([
   "compare_marketplaces",

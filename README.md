@@ -19,7 +19,7 @@ API=<your SubQ key>
 SHOPPING_MCP_DIR=/absolute/path/to/shopping-mcp
 OPENROUTER_API_KEY=<your OpenRouter key>
 # Optional, comma-separated, tried in order:
-# OPENROUTER_MODELS=google/gemma-4-31b-it:free,nvidia/nemotron-3-super-120b-a12b:free
+# OPENROUTER_MODELS=nvidia/nemotron-3-super-120b-a12b:free,nvidia/nemotron-3.5-lightning:free
 ```
 
 Then:
