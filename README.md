@@ -31,6 +31,6 @@ pnpm build
 - Typical latency is 450–900 ms per call, with or without images.
 - Validation errors come back as `422` with a JSON-schema style message, for example a score question with one level.
 
-PC part prices are mid-2026 estimates in `src/lib/pc.ts`. Check current listings before buying.
+PC parts in `src/lib/pc.ts` link to specific Amazon.in listings, with prices checked on 11 Oct 2026. Prices change daily, so confirm them on the listing.
 
 `/api/decide` has no authentication or rate limit, so don't deploy it publicly as is: anyone could spend your credits.
