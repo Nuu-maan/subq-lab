@@ -52,10 +52,10 @@ export function Panel({ className, ...props }: ComponentProps<"section">) {
   );
 }
 
-export function PanelHeading({ title, description }: { title: string; description?: ReactNode }) {
+export function PanelHeading({ id, title, description }: { id?: string; title: string; description?: ReactNode }) {
   return (
-    <div className="mb-4 flex flex-col gap-1">
-      <h2 className="text-lg font-semibold tracking-tight text-balance">{title}</h2>
+    <div className="flex flex-col gap-1">
+      <h2 id={id} className="text-lg font-semibold tracking-tight text-balance">{title}</h2>
       {description && <p className="text-sm text-pretty text-fg-secondary">{description}</p>}
     </div>
   );
@@ -89,6 +89,14 @@ export function EmptyState({ title, children }: { title: string; children: React
       <p className="font-medium">{title}</p>
       <p className="max-w-sm text-sm text-pretty text-fg-secondary">{children}</p>
     </div>
+  );
+}
+
+export function LiveStatus({ children }: { children: ReactNode }) {
+  return (
+    <p role="status" className="sr-only">
+      {children}
+    </p>
   );
 }
 
