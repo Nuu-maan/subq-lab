@@ -18,13 +18,13 @@ export function LabTabs() {
     <Tabs.Root defaultValue="pc" className="flex flex-col gap-6">
       <Tabs.List
         aria-label="Tasks"
-        className="relative flex w-fit max-w-full gap-1 overflow-x-auto rounded-full bg-surface p-1 ring-1 ring-line backdrop-blur-xl"
+        className="relative flex w-full gap-1 rounded-full sm:w-fit bg-surface p-1 ring-1 ring-line backdrop-blur-xl"
       >
         {TABS.map((tab) => (
           <Tabs.Tab
             key={tab.value}
             value={tab.value}
-            className="relative z-10 min-h-10 rounded-full px-4 text-sm font-medium whitespace-nowrap text-fg-secondary transition-colors duration-150 hover:text-fg data-[active]:text-on-accent"
+            className="relative z-10 min-h-10 flex-1 rounded-full px-2 text-sm sm:flex-none sm:px-4 font-medium whitespace-nowrap text-fg-secondary transition-colors duration-150 hover:text-fg data-[active]:text-on-accent"
           >
             {tab.label}
           </Tabs.Tab>
