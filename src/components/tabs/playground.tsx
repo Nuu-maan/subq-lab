@@ -63,7 +63,7 @@ export function PlaygroundTab() {
     <Split
       input={
         <>
-          <TaskHeader step="Task 04 · Raw API" title="Send a request">
+          <TaskHeader step="Task 05 · Developers" title="Send a raw API request">
             Edit the body sent to <code className="font-mono text-[13px] text-fg">POST /v1/systemone</code>. The model defaults to{" "}
             <code className="font-mono text-[13px] text-fg">subq-snap-preview</code>; set <code className="font-mono text-[13px] text-fg">model</code>{" "}
             to override it.

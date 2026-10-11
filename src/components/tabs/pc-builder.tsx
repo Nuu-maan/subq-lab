@@ -233,7 +233,10 @@ export function PcBuilderTab() {
           )}
 
           {!pending && !shortfall && !plan && (
-            <Waiting title="No build planned yet">Set a budget, describe how you&rsquo;ll use the PC, then select Plan my build.</Waiting>
+            <Waiting title="Your build will show up here">
+              You&rsquo;ll get up to three builds that fit your budget, the one SubQ thinks suits you best, and a parts list with a link to buy
+              every part.
+            </Waiting>
           )}
 
           {!pending && !shortfall && plan && build && (

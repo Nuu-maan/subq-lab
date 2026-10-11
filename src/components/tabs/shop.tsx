@@ -207,7 +207,7 @@ export function ShopTab() {
     <Split
       input={
         <>
-          <TaskHeader step="Task 05 · Agent" title="Ask the shopping agent">
+          <TaskHeader step="Task 04 · Shopping" title="Ask the shopping agent">
             A LangChain agent on a free OpenRouter model searches Flipkart and Amazon.in through your shopping MCP. Every price and link it quotes is
             checked against what the tools returned.
           </TaskHeader>
@@ -265,7 +265,10 @@ export function ShopTab() {
               ))}
             </div>
           ) : (
-            <Waiting title="No questions yet">Pick an example or ask your own. Each tool the agent calls shows up here as it runs.</Waiting>
+            <Waiting title="The conversation will show up here">
+              Ask for any product. You&rsquo;ll watch the agent search Flipkart and Amazon.in step by step, then get up to three picks with checked
+              prices and links.
+            </Waiting>
           )}
         </Panel>
       }
