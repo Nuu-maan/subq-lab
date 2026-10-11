@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { useState, type CSSProperties } from "react";
 import { toast } from "sonner";
 import { Button, Chip, EmptyState, Label, LiveStatus, Panel, PanelHeading, fieldClass } from "@/components/ui";
-import { PRICES_NOTE, solve, type Build, type Needs } from "@/lib/pc";
+import { PRICES_NOTE, amazonUrl, solve, type Build, type Needs } from "@/lib/pc";
 import { certainty, type Answer, type ChoiceAnswer, type NoulAnswer, type Question, type ScoreAnswer } from "@/lib/subq";
 import { decide } from "@/lib/use-decide";
 
@@ -84,11 +84,13 @@ function comparisonRequest(request: string, budget: number, builds: Build[]) {
   return {
     state: { request, budget: formatInr(budget), options: Object.fromEntries(builds.map((build, i) => [OPTIONS[i], build.parts])) },
     questions: {
-      pick: {
-        type: "choice",
-        instructions: "Which build option best fits this person's request and budget?",
-        criteria: Object.fromEntries(builds.map((build, i) => [OPTIONS[i], describe(build)])),
-      },
+      ...(builds.length > 1 && {
+        pick: {
+          type: "choice",
+          instructions: "Which build option best fits this person's request and budget?",
+          criteria: Object.fromEntries(builds.map((build, i) => [OPTIONS[i], describe(build)])),
+        },
+      }),
       ...Object.fromEntries(
         builds.map((build, i) => [
           `value_${OPTIONS[i]}`,
@@ -106,7 +108,7 @@ function comparisonRequest(request: string, budget: number, builds: Build[]) {
 function partsListText(build: Build, budget: number) {
   return [
     `Gaming PC: ${formatInr(build.total)} (budget ${formatInr(budget)})`,
-    ...build.parts.map((part) => `${part.kind}: ${part.name}, ${formatInr(part.price)}`),
+    ...build.parts.map((part) => `${part.kind}: ${part.name}, ${formatInr(part.price)}, ${amazonUrl(part.asin)}`),
   ].join("\n");
 }
 
@@ -146,8 +148,8 @@ export function PcBuilderTab() {
     }
 
     const answers = comparison.data.answers;
-    const pick = answers.pick as ChoiceAnswer;
-    const value = Object.fromEntries(OPTIONS.map((option) => [option, answers[`value_${option}`] as ScoreAnswer]));
+    const pick = (answers.pick as ChoiceAnswer | undefined) ?? { type: "choice", choice: "A", probabilities: { A: 1 }, confidence: 1 };
+    const value = Object.fromEntries(builds.map((_, i) => [OPTIONS[i], answers[`value_${OPTIONS[i]}`] as ScoreAnswer]));
     setPlan({ needs, readings, builds, pick, value });
     setSelected(pick.choice);
   }
@@ -182,7 +184,7 @@ export function PcBuilderTab() {
               id="budget"
               type="range"
               min={60000}
-              max={250000}
+              max={300000}
               step={1000}
               value={budget}
               onChange={(event) => setBudget(Number(event.target.value))}
@@ -225,7 +227,7 @@ export function PcBuilderTab() {
           Build plan
         </h2>
         <LiveStatus>
-          {phase === "reading" ? "Reading your request…" : phase === "comparing" ? "Comparing builds…" : plan ? `SubQ picked option ${plan.pick.choice}.` : ""}
+          {phase === "reading" ? "Reading your request…" : phase === "comparing" ? "Comparing builds…" : plan ? (plan.builds.length > 1 ? `SubQ picked option ${plan.pick.choice}.` : "One build fits your budget.") : ""}
         </LiveStatus>
 
         {shortfall && (
@@ -261,12 +263,18 @@ export function PcBuilderTab() {
 
             <fieldset className="flex flex-col gap-3">
               <legend className="mb-3 text-sm font-medium text-fg-secondary">Build options</legend>
+              {plan.builds.length === 1 && (
+                <p className="text-sm text-pretty text-fg-secondary">
+                  Only one compatible build fits this budget at today&rsquo;s prices. Raise the budget or drop Wi-Fi to see alternatives.
+                </p>
+              )}
               <div className="grid gap-3 md:grid-cols-3">
                 {plan.builds.map((option, index) => {
                   const letter = OPTIONS[index];
                   const fit = plan.pick.probabilities[letter] ?? 0;
                   const value = plan.value[letter];
                   const picked = plan.pick.choice === letter;
+                  const only = plan.builds.length === 1;
                   return (
                     <label
                       key={option.id}
@@ -284,7 +292,9 @@ export function PcBuilderTab() {
                       <span className="flex items-center justify-between gap-2">
                         <span className="text-sm font-medium">Option {letter}</span>
                         {picked && (
-                          <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium whitespace-nowrap text-on-accent">SubQ&rsquo;s pick</span>
+                          <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium whitespace-nowrap text-on-accent">
+                            {only ? "Only fit" : "SubQ\u2019s pick"}
+                          </span>
                         )}
                       </span>
                       <span className="flex flex-col gap-0.5 text-sm">
@@ -295,13 +305,17 @@ export function PcBuilderTab() {
                       </span>
                       <span className="text-xl font-semibold tracking-tight tabular-nums">{formatInr(option.total)}</span>
                       <span className="flex flex-col gap-1.5">
-                        <span className="flex justify-between text-xs text-fg-secondary">
-                          <span>Fit</span>
-                          <span className="tabular-nums">{Math.round(fit * 100)}%</span>
-                        </span>
-                        <span aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-track">
-                          <span className={clsx("bar block h-full rounded-full", picked ? "bg-accent" : "bg-bar")} style={{ "--p": fit } as CSSProperties} />
-                        </span>
+                        {!only && (
+                          <>
+                            <span className="flex justify-between text-xs text-fg-secondary">
+                              <span>Fit</span>
+                              <span className="tabular-nums">{Math.round(fit * 100)}%</span>
+                            </span>
+                            <span aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-track">
+                              <span className={clsx("bar block h-full rounded-full", picked ? "bg-accent" : "bg-bar")} style={{ "--p": fit } as CSSProperties} />
+                            </span>
+                          </>
+                        )}
                         <span className="text-xs text-fg-secondary">Value: {value.legend[String(Math.round(value.score))]}</span>
                       </span>
                     </label>
@@ -368,13 +382,13 @@ function PartsTable({ build, budget }: { build: Build; budget: number }) {
                 <td className="px-4 py-2.5 text-right whitespace-nowrap tabular-nums">{formatInr(part.price)}</td>
                 <td className="px-4 py-2.5 text-right">
                   <a
-                    href={`https://www.amazon.in/s?k=${encodeURIComponent(part.name)}`}
+                    href={amazonUrl(part.asin)}
                     target="_blank"
                     rel="noreferrer"
-                    aria-label={`Search Amazon.in for ${part.name} (opens in a new tab)`}
-                    className="text-accent underline-offset-4 hover:underline"
+                    aria-label={`View ${part.name} on Amazon.in (opens in a new tab)`}
+                    className="whitespace-nowrap text-accent underline-offset-4 hover:underline"
                   >
-                    Amazon.in
+                    View on Amazon.in
                   </a>
                 </td>
               </tr>
