@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnswerCard, UsageLine } from "@/components/answers";
-import { Button, Chip, EmptyState, Label, LiveStatus, Panel, PanelHeading, fieldClass } from "@/components/ui";
+import { Button, Chip, EmptyState, Intro, Label, LiveStatus, Panel, SectionLabel, fieldClass } from "@/components/ui";
 import type { Question } from "@/lib/subq";
 import { useDecide } from "@/lib/use-decide";
 
@@ -56,8 +56,10 @@ export function TriageTab() {
   const { result, pending, run } = useDecide();
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div className="flex flex-col gap-12">
       <Panel aria-labelledby="triage-heading">
+        <SectionLabel id="triage-heading" title="Ticket" />
+        <Intro>Paste a support message. SubQ decides who owns it, how urgent it is and whether a person should step in.</Intro>
         <form
           className="flex flex-col gap-4"
           onSubmit={(event) => {
@@ -65,8 +67,7 @@ export function TriageTab() {
             run({ state: ticket, questions: QUESTIONS });
           }}
         >
-          <PanelHeading id="triage-heading" title="Ticket triage" description="Paste a support message. SubQ decides who owns it, how urgent it is and whether a person should step in." />
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Sample tickets">
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Sample tickets">
             {SAMPLES.map((sample) => (
               <Chip key={sample.label} selected={ticket === sample.text} onClick={() => setTicket(sample.text)}>
                 {sample.label}
@@ -79,7 +80,7 @@ export function TriageTab() {
               id="ticket"
               name="ticket"
               required
-              rows={7}
+              rows={5}
               value={ticket}
               onChange={(event) => setTicket(event.target.value)}
               placeholder="My order arrived damaged…"
@@ -94,20 +95,20 @@ export function TriageTab() {
 
       <Panel aria-labelledby="triage-results" aria-busy={pending}>
         <LiveStatus>{pending ? "Triaging ticket…" : result?.data ? "Triage results ready." : ""}</LiveStatus>
-        <h2 id="triage-results" className="sr-only">
-          Triage results
-        </h2>
+        <SectionLabel
+          id="triage-results"
+          title="Result"
+          count={result?.data ? Object.keys(result.data.answers).length : undefined}
+          action={result?.data && <UsageLine ms={result.ms} tokens={result.data.usage.input_tokens + result.data.usage.output_tokens} />}
+        />
         {result?.data ? (
-          <div className="flex flex-col gap-3">
-            <div className="grid items-start gap-3 sm:grid-cols-2">
-              {Object.entries(result.data.answers).map(([key, answer], index) => (
-                <AnswerCard key={key} title={TITLES[key] ?? key} answer={answer} index={index} />
-              ))}
-            </div>
-            <UsageLine ms={result.ms} tokens={result.data.usage.input_tokens + result.data.usage.output_tokens} />
+          <div className="grid items-start gap-2 sm:grid-cols-2">
+            {Object.entries(result.data.answers).map(([key, answer], index) => (
+              <AnswerCard key={key} title={TITLES[key] ?? key} answer={answer} index={index} />
+            ))}
           </div>
         ) : (
-          <EmptyState title="No ticket triaged yet">Pick a sample or paste your own message, then select Triage ticket.</EmptyState>
+          <EmptyState title="Nothing triaged yet">Pick a sample or paste your own message, then select Triage ticket.</EmptyState>
         )}
       </Panel>
     </div>
