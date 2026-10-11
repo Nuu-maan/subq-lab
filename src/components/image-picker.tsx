@@ -87,7 +87,7 @@ export function ImagePicker({
                 type="button"
                 onClick={() => remove(image)}
                 aria-label={`Remove ${image.name}`}
-                className="absolute top-1 right-1 grid size-8 place-items-center rounded-full bg-canvas/85 text-fg ring-1 ring-line backdrop-blur transition-[scale] duration-150 ease-out active:scale-[0.96]"
+                className="absolute top-1 right-1 grid size-8 place-items-center rounded-full bg-canvas/85 text-fg ring-1 ring-line backdrop-blur transition-[scale] duration-150 ease-out motion-safe:active:scale-[0.96]"
               >
                 <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                   <path d="M4 4l8 8M12 4l-8 8" />

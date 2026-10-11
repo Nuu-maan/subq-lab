@@ -270,7 +270,7 @@ export function PcBuilderTab() {
                   return (
                     <label
                       key={option.id}
-                      className="rise flex cursor-pointer flex-col gap-3 rounded-2xl bg-raised p-4 ring-1 ring-line transition-[box-shadow,scale] duration-150 ease-out active:scale-[0.98] has-checked:ring-2 has-checked:ring-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent hover:ring-line-strong"
+                      className="rise flex cursor-pointer flex-col gap-3 rounded-2xl bg-raised p-4 ring-1 ring-line transition-[box-shadow,scale] duration-150 ease-out motion-safe:active:scale-[0.98] has-checked:ring-2 has-checked:ring-accent has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent hover:ring-line-strong"
                       style={{ "--i": index + 2 } as CSSProperties}
                     >
                       <input

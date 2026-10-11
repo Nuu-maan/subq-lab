@@ -20,7 +20,7 @@ export function Button({
       disabled={disabled || pending}
       aria-busy={pending || undefined}
       className={clsx(
-        "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium whitespace-nowrap transition-[scale,background-color,box-shadow] duration-150 ease-out active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100",
+        "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium whitespace-nowrap transition-[scale,background-color,box-shadow] duration-150 ease-out motion-safe:active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100",
         buttonVariants[variant],
         className,
       )}
@@ -75,7 +75,7 @@ export function Chip({ selected, className, ...props }: ComponentProps<"button">
       aria-pressed={selected}
       {...props}
       className={clsx(
-        "min-h-9 rounded-full px-3.5 text-sm transition-[scale,background-color,box-shadow] duration-150 ease-out active:scale-[0.96]",
+        "min-h-9 rounded-full px-3.5 text-sm transition-[scale,background-color,box-shadow] duration-150 ease-out motion-safe:active:scale-[0.96]",
         selected ? "bg-accent-soft text-fg ring-1 ring-accent" : "bg-raised text-fg-secondary ring-1 ring-line hover:text-fg hover:ring-line-strong",
         className,
       )}
