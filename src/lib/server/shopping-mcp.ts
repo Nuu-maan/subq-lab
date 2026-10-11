@@ -1,5 +1,5 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport, getDefaultEnvironment } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { Client } from "@modelcontextprotocol/client";
+import { StdioClientTransport, getDefaultEnvironment } from "@modelcontextprotocol/client/stdio";
 
 export class ShoppingUnavailable extends Error {}
 
@@ -38,7 +38,7 @@ export function shoppingClient() {
 
 export async function callShopping<T>(name: string, args: Record<string, unknown>, timeout = 25_000): Promise<T> {
   const client = await shoppingClient();
-  const result = await client.callTool({ name, arguments: args }, undefined, { timeout });
+  const result = await client.callTool({ name, arguments: args }, { timeout });
   const content = Array.isArray(result.content) ? result.content : [];
   const text = content.find((block) => block.type === "text")?.text ?? "";
   if (result.isError) throw new Error(text || `${name} failed`);
