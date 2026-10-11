@@ -46,8 +46,11 @@ function summarize(content: string) {
 
 function friendly(error: unknown) {
   const status = (error as { status?: number })?.status;
-  if (status === 429) {
-    return "The free OpenRouter models are rate limited right now (20 requests a minute, 50 a day on free accounts). Wait a minute and try again.";
+  const message = error instanceof Error ? error.message : "";
+  if (status === 429 || /\b429\b/.test(message)) {
+    return /provider returned error|temporarily rate-limited/i.test(message)
+      ? "Every configured free model is rate limited by its provider right now. Wait a minute and try again, or set OPENROUTER_MODELS to other free models."
+      : "You've hit OpenRouter's free limit (20 requests a minute, 50 a day). Wait a minute, or try again tomorrow.";
   }
   if (status === 401 || status === 403) return "OpenRouter rejected the API key. Check OPENROUTER_API_KEY in .env.";
   if (error instanceof Error && /recursion limit/i.test(error.message)) return "The agent ran out of steps. Try a narrower question.";
