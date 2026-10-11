@@ -7,7 +7,7 @@ A Next.js playground for the [SubQ Decisions API](https://docs.subq.ai/endpoints
 - **Vision**: up to four images, checked for PC hardware, content safety or product photo quality, plus your own yes/no question.
 - **Playground**: edit the raw `POST /v1/systemone` body and inspect the status code, latency, tokens and raw response.
 
-The background is a WebGL shader that speeds up while a request is in flight and shifts color with the confidence of the last answer.
+The header pond is a WebGL caustics shader. It speeds up while a request is in flight, warms or cools with the confidence of the last answer, and follows the system light or dark theme.
 
 ## Run it
 
