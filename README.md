@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SubQ Lab
 
-## Getting Started
+A Next.js playground for the [SubQ Decisions API](https://docs.subq.ai/endpoints/decisions-api/). Each tab is a real task answered with calibrated probabilities:
 
-First, run the development server:
+- **PC builder**: describe how you'll use a gaming PC and set a budget. SubQ reads your needs, a solver assembles compatible builds from an Indian-price parts catalog, then SubQ picks the best fit.
+- **Triage**: routes a support ticket, rates its urgency and mood, and flags whether a person should step in.
+- **Vision**: up to four images, checked for PC hardware, content safety or product photo quality, plus your own yes/no question.
+- **Playground**: edit the raw `POST /v1/systemone` body and inspect the status code, latency, tokens and raw response.
+
+A WebGL water simulation runs behind the whole app: clicks, typing, running requests and arriving answers all ripple it. Switching tasks grows a water bubble over the page and bursts it to reveal the next one, and the PC budget slider is a WebGL liquid gauge.
+
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+echo "API=<your SubQ key>" > .env
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The key stays on the server. The browser calls `/api/decide`, which forwards to SubQ with the key attached.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm test   # build solver checks
+pnpm lint
+pnpm build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Notes from testing the API
 
-## Learn More
+- `subq-snap-preview` only serves the Decisions API. `POST /v1/chat/completions` returns `400 Model 'subq-snap-preview' does not support completions requests`.
+- Typical latency is 450–900 ms per call, with or without images.
+- Validation errors come back as `422` with a JSON-schema style message, for example a score question with one level.
 
-To learn more about Next.js, take a look at the following resources:
+PC parts in `src/lib/pc.ts` link to specific Amazon.in listings, with prices checked on 11 Oct 2026. Prices change daily, so confirm them on the listing.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`/api/decide` has no authentication or rate limit, so don't deploy it publicly as is: anyone could spend your credits.
