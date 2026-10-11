@@ -27,6 +27,18 @@ function Mark() {
   );
 }
 
+function FooterLink({ href, children }: { href: string; children: string }) {
+  return (
+    <a href={href} target="_blank" rel="noreferrer" className="inline-flex min-h-9 items-center rounded-lg px-2 transition-colors duration-150 hover:text-fg">
+      {children}
+      <span className="sr-only"> (opens in a new tab)</span>
+      <span aria-hidden="true" className="ml-1">
+        ↗
+      </span>
+    </a>
+  );
+}
+
 function activePanel() {
   return document.querySelector<HTMLElement>('main [role="tabpanel"]:not([hidden])');
 }
@@ -95,17 +107,10 @@ export function Workspace() {
         <span>
           Every answer is a calibrated probability from <code className="font-mono text-fg">subq-snap-preview</code>
         </span>
-        <a
-          href="https://docs.subq.ai"
-          target="_blank"
-          rel="noreferrer"
-          className="-mr-2 inline-flex min-h-9 items-center rounded-lg px-2 transition-colors duration-150 hover:text-fg"
-        >
-          SubQ docs<span className="sr-only"> (opens in a new tab)</span>
-          <span aria-hidden="true" className="ml-1">
-            ↗
-          </span>
-        </a>
+        <nav aria-label="Project links" className="-mx-2 flex flex-wrap items-center">
+          <FooterLink href="https://github.com/Nuu-maan/subq-lab">github.com/Nuu-maan/subq-lab</FooterLink>
+          <FooterLink href="https://docs.subq.ai">SubQ docs</FooterLink>
+        </nav>
       </footer>
     </Tabs.Root>
   );
