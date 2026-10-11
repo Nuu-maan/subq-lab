@@ -45,7 +45,7 @@ export function Panel({ className, ...props }: ComponentProps<"section">) {
     <section
       {...props}
       className={clsx(
-        "rounded-[28px] bg-surface p-5 shadow-[inset_0_1px_0_0_oklch(1_0_0/0.06),0_24px_48px_-24px_oklch(0_0_0/0.7)] ring-1 ring-line backdrop-blur-xl",
+        "min-w-0 rounded-[28px] bg-surface p-5 shadow-[inset_0_1px_0_0_oklch(1_0_0/0.06),0_24px_48px_-24px_oklch(0_0_0/0.7)] ring-1 ring-line backdrop-blur-xl",
         className,
       )}
     />

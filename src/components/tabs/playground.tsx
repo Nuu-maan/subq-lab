@@ -60,7 +60,7 @@ export function PlaygroundTab() {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Panel aria-labelledby="playground-heading">
         <form
           className="flex flex-col gap-4"
@@ -142,7 +142,7 @@ export function PlaygroundTab() {
             </div>
             {result.error && <p className="text-sm text-pretty text-danger">{result.error}</p>}
             {result.data && (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid items-start gap-3 sm:grid-cols-2">
                 {Object.entries(result.data.answers).map(([key, answer], index) => (
                   <AnswerCard key={key} title={humanize(key)} answer={answer} index={index} />
                 ))}

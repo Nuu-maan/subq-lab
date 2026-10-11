@@ -56,7 +56,7 @@ export function TriageTab() {
   const { result, pending, run } = useDecide();
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <Panel aria-labelledby="triage-heading">
         <form
           className="flex flex-col gap-4"
@@ -99,7 +99,7 @@ export function TriageTab() {
         </h2>
         {result?.data ? (
           <div className="flex flex-col gap-3">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid items-start gap-3 sm:grid-cols-2">
               {Object.entries(result.data.answers).map(([key, answer], index) => (
                 <AnswerCard key={key} title={TITLES[key] ?? key} answer={answer} index={index} />
               ))}
