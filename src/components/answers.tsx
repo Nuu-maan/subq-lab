@@ -2,19 +2,16 @@
 
 import NumberFlow from "@number-flow/react";
 import clsx from "clsx";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { Answer, ChoiceAnswer, NoulAnswer, ScoreAnswer } from "@/lib/subq";
 import { humanize } from "./ui";
 
 const percent = { style: "percent", maximumFractionDigits: 0 } as const;
 
-function Bar({ value, strong }: { value: number; strong?: boolean }) {
+export function Bar({ value, strong }: { value: number; strong?: boolean }) {
   return (
-    <div aria-hidden="true" className="h-2 overflow-hidden rounded-full bg-track">
-      <div
-        className={clsx("bar h-full rounded-full", strong ? "bg-accent" : "bg-bar")}
-        style={{ "--p": value } as CSSProperties}
-      />
+    <div aria-hidden="true" className="h-1 overflow-hidden rounded-full bg-track">
+      <div className={clsx("bar h-full rounded-full", strong ? "bg-solid" : "bg-bar")} style={{ "--p": value } as CSSProperties} />
     </div>
   );
 }
@@ -25,8 +22,8 @@ function Percent({ value }: { value: number }) {
 
 function Row({ label, value, strong }: { label: string; value: number; strong: boolean }) {
   return (
-    <li className="flex flex-col gap-1.5 text-sm">
-      <span className="flex items-baseline justify-between gap-3">
+    <li className="flex flex-col gap-1.5">
+      <span className="flex items-baseline justify-between gap-3 text-[13px]">
         <span className={clsx("break-words", strong ? "font-medium text-fg" : "text-fg-secondary")}>{label}</span>
         <span className="text-fg-secondary">
           <Percent value={value} />
@@ -37,17 +34,27 @@ function Row({ label, value, strong }: { label: string; value: number; strong: b
   );
 }
 
+function Headline({ value, detail }: { value: string; detail?: ReactNode }) {
+  return (
+    <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+      <span className="text-xl font-medium tracking-[-0.02em] text-balance">{value}</span>
+      {detail && <span className="text-[13px] text-fg-secondary">{detail}</span>}
+    </p>
+  );
+}
+
 function NoulView({ answer }: { answer: NoulAnswer }) {
-  const yes = answer.noul >= 0.5;
   return (
     <>
-      <p className="flex items-baseline gap-2">
-        <span className="text-2xl font-semibold tracking-tight">{yes ? "Yes" : "No"}</span>
-        <span className="text-sm text-fg-secondary">
-          <Percent value={answer.noul} /> likely yes
-        </span>
-      </p>
-      <Bar value={answer.noul} strong={yes} />
+      <Headline
+        value={answer.noul >= 0.5 ? "Yes" : "No"}
+        detail={
+          <>
+            <Percent value={answer.noul} /> likely yes
+          </>
+        }
+      />
+      <Bar value={answer.noul} strong />
     </>
   );
 }
@@ -56,8 +63,8 @@ function ChoiceView({ answer, labels }: { answer: ChoiceAnswer; labels?: Record<
   const rows = Object.entries(answer.probabilities).sort(([, a], [, b]) => b - a);
   return (
     <>
-      <p className="text-2xl font-semibold tracking-tight text-balance">{labels?.[answer.choice] ?? humanize(answer.choice)}</p>
-      <ul className="flex flex-col gap-2.5">
+      <Headline value={labels?.[answer.choice] ?? humanize(answer.choice)} />
+      <ul className="flex flex-col gap-3">
         {rows.map(([option, probability]) => (
           <Row key={option} label={labels?.[option] ?? humanize(option)} value={probability} strong={option === answer.choice} />
         ))}
@@ -71,13 +78,15 @@ function ScoreView({ answer }: { answer: ScoreAnswer }) {
   const nearest = answer.legend[String(Math.round(answer.score))];
   return (
     <>
-      <p className="flex flex-wrap items-baseline gap-x-2">
-        <span className="text-2xl font-semibold tracking-tight">{nearest}</span>
-        <span className="text-sm text-fg-secondary">
-          <NumberFlow value={answer.score} format={{ maximumFractionDigits: 2 }} className="tabular-nums" /> on a 0–{levels - 1} scale
-        </span>
-      </p>
-      <ol className="flex flex-col gap-2.5">
+      <Headline
+        value={nearest}
+        detail={
+          <>
+            <NumberFlow value={answer.score} format={{ maximumFractionDigits: 2 }} className="tabular-nums" /> of {levels - 1}
+          </>
+        }
+      />
+      <ol className="flex flex-col gap-3">
         {Object.entries(answer.legend).map(([level, label]) => (
           <Row key={level} label={label} value={answer.probabilities[level] ?? 0} strong={label === nearest} />
         ))}
@@ -98,14 +107,11 @@ export function AnswerCard({
   index?: number;
 }) {
   return (
-    <article
-      className="rise flex flex-col gap-3 rounded-2xl bg-raised p-4 ring-1 ring-line"
-      style={{ "--i": index } as CSSProperties}
-    >
-      <header className="flex items-start justify-between gap-3">
-        <h3 className="text-sm text-pretty text-fg-secondary">{title}</h3>
+    <article className="rise flex flex-col gap-4 rounded-2xl bg-surface p-5" style={{ "--i": index } as CSSProperties}>
+      <header className="flex items-baseline justify-between gap-3 text-[13px] text-fg-secondary">
+        <h4 className="text-pretty">{title}</h4>
         {answer.type !== "noul" && (
-          <span className="shrink-0 text-xs whitespace-nowrap text-fg-tertiary">
+          <span className="shrink-0 whitespace-nowrap">
             <Percent value={answer.confidence} /> sure
           </span>
         )}
@@ -119,8 +125,8 @@ export function AnswerCard({
 
 export function UsageLine({ ms, tokens }: { ms: number; tokens: number }) {
   return (
-    <p className="text-xs text-fg-tertiary tabular-nums">
+    <span className="text-[13px] text-fg-secondary tabular-nums">
       {ms} ms · {tokens} tokens
-    </p>
+    </span>
   );
 }
