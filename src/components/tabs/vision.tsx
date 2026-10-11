@@ -77,6 +77,7 @@ export function VisionTab() {
   const [images, setImages] = useState<PickedImage[]>([]);
   const [custom, setCustom] = useState("");
   const [titles, setTitles] = useState<Record<string, string>>({});
+  const [labels, setLabels] = useState<Record<string, Record<string, string>>>({});
   const [missingImages, setMissingImages] = useState(false);
   const { result, pending, run } = useDecide();
   const active = LENSES[lens];
@@ -85,20 +86,27 @@ export function VisionTab() {
     if (images.length === 0) return setMissingImages(true);
     const questions: Record<string, Question> = {};
     const nextTitles: Record<string, string> = {};
+    const nextLabels: Record<string, Record<string, string>> = {};
     for (const [key, { title, ...question }] of Object.entries(active.questions)) {
       questions[key] = question as Question;
       nextTitles[key] = title;
+      if (question.type === "choice") {
+        nextLabels[key] = Object.fromEntries(
+          Object.entries(question.criteria).filter((entry): entry is [string, string] => entry[1] !== null),
+        );
+      }
     }
     if (custom.trim()) {
       questions.custom = { type: "noul", instructions: custom.trim() };
       nextTitles.custom = custom.trim();
     }
     setTitles(nextTitles);
+    setLabels(nextLabels);
     run({ state: active.state, images: images.map((image) => image.input), questions });
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <Panel aria-labelledby="vision-heading">
         <form
           className="flex flex-col gap-4"
@@ -147,9 +155,9 @@ export function VisionTab() {
         <LiveStatus>{pending ? "Checking images…" : result?.data ? "Image check results ready." : ""}</LiveStatus>
         {result?.data ? (
           <div className="flex flex-col gap-3">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid items-start gap-3 sm:grid-cols-2">
               {Object.entries(result.data.answers).map(([key, answer], index) => (
-                <AnswerCard key={key} title={titles[key] || humanize(key)} answer={answer} index={index} />
+                <AnswerCard key={key} title={titles[key] || humanize(key)} answer={answer} labels={labels[key]} index={index} />
               ))}
             </div>
             <UsageLine ms={result.ms} tokens={result.data.usage.input_tokens + result.data.usage.output_tokens} />
