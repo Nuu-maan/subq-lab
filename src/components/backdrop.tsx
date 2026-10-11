@@ -54,12 +54,12 @@ void main() {
 
   vec3 deep = vec3(0.022, 0.024, 0.04);
   vec3 violet = vec3(0.46, 0.3, 0.98);
-  vec3 signal = mix(vec3(0.98, 0.5, 0.28), vec3(0.22, 0.86, 0.92), smoothstep(0.55, 0.95, uConf));
+  vec3 signal = mix(vec3(0.98, 0.5, 0.28), vec3(0.22, 0.86, 0.92), smoothstep(0.45, 0.85, uConf));
 
   vec3 col = deep;
-  col = mix(col, violet * 0.5, smoothstep(0.35, 0.9, f) * 0.55);
-  col = mix(col, signal * 0.62, smoothstep(0.6, 1.0, length(r)) * (0.32 + 0.4 * uEnergy));
-  col += violet * exp(-3.2 * length(p - uPointer)) * 0.05;
+  col = mix(col, violet * 0.62, smoothstep(0.3, 0.85, f) * 0.7);
+  col = mix(col, signal * 0.7, smoothstep(0.55, 0.95, length(r)) * (0.4 + 0.45 * uEnergy));
+  col += violet * exp(-3.2 * length(p - uPointer)) * 0.08;
 
   vec2 v = uv - 0.5;
   col *= 1.0 - 1.1 * dot(v, v);
@@ -107,7 +107,7 @@ export function Backdrop() {
     const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
     const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
     let energy = 0;
-    let confidence = 0.5;
+    let confidence = activity.get().confidence;
     let frame = 0;
     const startedAt = performance.now();
 

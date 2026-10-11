@@ -6,7 +6,7 @@ export type Activity = {
   confidence: number;
 };
 
-let current: Activity = { inFlight: 0, calls: 0, totalMs: 0, tokens: 0, confidence: 0.5 };
+let current: Activity = { inFlight: 0, calls: 0, totalMs: 0, tokens: 0, confidence: 0.85 };
 const listeners = new Set<() => void>();
 
 function set(next: Partial<Activity>) {

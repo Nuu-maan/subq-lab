@@ -16,7 +16,7 @@
 
 @theme inline {
   --color-canvas: var(--slate-1);
-  --color-surface: oklch(from var(--slate-2) l c h / 0.82);
+  --color-surface: oklch(from var(--slate-2) l c h / 0.74);
   --color-raised: oklch(from var(--slate-3) l c h / 0.92);
   --color-line: oklch(1 0 0 / 0.08);
   --color-line-strong: oklch(1 0 0 / 0.16);
