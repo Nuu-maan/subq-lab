@@ -6,11 +6,13 @@ import { useState, type CSSProperties } from "react";
 import { toast } from "sonner";
 import { LiquidGauge } from "@/components/liquid-gauge";
 import { Button, Chip, Label, LiveStatus, Panel, SectionLabel, Split, TaskHeader, Waiting, fieldClass } from "@/components/ui";
-import { SNAPSHOT_DATE, amazonUrl, solve, type Build, type Needs } from "@/lib/pc";
+import { SNAPSHOT_DATE, solve, type Build, type Needs, type PriceBook, type Store } from "@/lib/pc";
 import { certainty, type Answer, type ChoiceAnswer, type NoulAnswer, type Question, type ScoreAnswer } from "@/lib/subq";
 import { decide } from "@/lib/use-decide";
+import { usePrices, type PriceStatus } from "@/lib/use-prices";
 
 const inr = { style: "currency", currency: "INR", maximumFractionDigits: 0 } as const;
+const STORE_NAMES: Record<Store, string> = { amazon: "Amazon.in", flipkart: "Flipkart" };
 const formatInr = (value: number) => new Intl.NumberFormat("en-IN", inr).format(value);
 const OPTIONS = ["A", "B", "C"];
 
@@ -109,7 +111,7 @@ function comparisonRequest(request: string, budget: number, builds: Build[]) {
 function partsListText(build: Build, budget: number) {
   return [
     `Gaming PC: ${formatInr(build.total)} (budget ${formatInr(budget)})`,
-    ...build.parts.map((part) => `${part.kind}: ${part.name}, ${formatInr(part.price)}, ${amazonUrl(part.asin)}`),
+    ...build.parts.map((part) => `${part.kind}: ${part.name}, ${formatInr(part.price)} on ${STORE_NAMES[part.store]}, ${part.url}`),
   ].join("\n");
 }
 
@@ -120,6 +122,8 @@ export function PcBuilderTab() {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [selected, setSelected] = useState("A");
   const [shortfall, setShortfall] = useState<{ budget: number; cheapest: number | null } | null>(null);
+  const [pricedWith, setPricedWith] = useState<PriceBook | null>(null);
+  const prices = usePrices();
 
   async function planBuild() {
     setPhase("reading");
@@ -132,7 +136,9 @@ export function PcBuilderTab() {
     }
 
     const { needs, readings } = interpret(reading.data.answers);
-    const { builds, cheapest } = solve(needs, budget);
+    const book = prices.status?.book ?? null;
+    setPricedWith(book);
+    const { builds, cheapest } = solve(needs, budget, book ?? undefined);
     if (builds.length === 0) {
       setPhase("idle");
       setPlan(null);
@@ -165,8 +171,8 @@ export function PcBuilderTab() {
       input={
         <>
           <TaskHeader step="Task 01 · Hardware" title="Plan a gaming PC">
-            Describe what you play. SubQ reads your needs, a solver finds compatible builds from real Amazon.in listings, then SubQ picks the best
-            fit.
+            Describe what you play. SubQ reads your needs, a solver finds compatible builds from live Amazon.in and Flipkart prices, then SubQ
+            picks the best fit.
           </TaskHeader>
           <form
             className="flex flex-col gap-6"
@@ -199,6 +205,7 @@ export function PcBuilderTab() {
               Plan my build
             </Button>
           </form>
+          <PriceSource status={prices.status} onRefresh={prices.refresh} />
         </>
       }
       readout={
@@ -220,7 +227,7 @@ export function PcBuilderTab() {
           {!pending && shortfall && (
             <Waiting title={`Nothing compatible fits ${formatInr(shortfall.budget)}`}>
               {shortfall.cheapest === null
-                ? "No compatible build is in stock right now. Relax a requirement such as Wi-Fi or storage."
+                ? "No compatible build is in stock right now. Refresh prices later or relax a requirement such as Wi-Fi or storage."
                 : `The cheapest build for these needs costs ${formatInr(shortfall.cheapest)}. Raise the budget or relax a requirement such as Wi-Fi or storage.`}
             </Waiting>
           )}
@@ -306,7 +313,7 @@ export function PcBuilderTab() {
                 </fieldset>
               </Panel>
 
-              <PartsList build={build} budget={budget} />
+              <PartsList build={build} budget={budget} book={pricedWith} />
             </>
           )}
         </>
@@ -376,7 +383,7 @@ function Progress({ phase }: { phase: Phase }) {
   );
 }
 
-function PartsList({ build, budget }: { build: Build; budget: number }) {
+function PartsList({ build, budget, book }: { build: Build; budget: number; book: PriceBook | null }) {
   async function copy() {
     try {
       await navigator.clipboard.writeText(partsListText(build, budget));
@@ -406,7 +413,7 @@ function PartsList({ build, budget }: { build: Build; budget: number }) {
         {build.parts.map((part, index) => (
           <li key={`${build.id}-${part.kind}`} className="rise" style={{ "--i": index + 5 } as CSSProperties}>
             <a
-              href={amazonUrl(part.asin)}
+              href={part.url}
               target="_blank"
               rel="noreferrer"
               className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-150 hover:bg-surface"
@@ -416,14 +423,21 @@ function PartsList({ build, budget }: { build: Build; budget: number }) {
                 <span className="text-ui text-pretty">{part.name}</span>
               </span>
               <span aria-hidden="true" className="hidden h-px min-w-6 flex-1 bg-line sm:block" />
-              <span className="ml-auto shrink-0 text-ui tabular-nums sm:ml-0">{formatInr(part.price)}</span>
+              <span className="ml-auto flex shrink-0 flex-col items-end sm:ml-0">
+                <span className="text-ui tabular-nums">{formatInr(part.price)}</span>
+                <span className="text-[12px] whitespace-nowrap text-fg-secondary">
+                  {STORE_NAMES[part.store]}
+                  {!part.live && " · snapshot"}
+                  {part.alternative && ` · ${STORE_NAMES[part.alternative.store]} ${formatInr(part.alternative.price)}`}
+                </span>
+              </span>
               <span
                 aria-hidden="true"
                 className="shrink-0 text-[13px] text-fg-secondary transition-[color,translate] duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-fg"
               >
                 ↗
               </span>
-              <span className="sr-only">View on Amazon.in (opens in a new tab)</span>
+              <span className="sr-only">View on {STORE_NAMES[part.store]} (opens in a new tab)</span>
             </a>
           </li>
         ))}
@@ -439,8 +453,52 @@ function PartsList({ build, budget }: { build: Build; budget: number }) {
         </div>
         <LiquidGauge value={build.total / budget} className="h-3 w-full rounded-full" />
       </div>
-      <p className="text-[13px] text-pretty text-fg-secondary">Prices are from Amazon.in on {SNAPSHOT_DATE} and change daily. Confirm the price on each listing before buying. Excludes monitor,
-        peripherals and Windows.</p>
+      <p className="text-[13px] text-pretty text-fg-secondary">
+        {book
+          ? `Live prices from Amazon.in and Flipkart, checked ${checkedAgo(book.checkedAt)}. Each part uses the cheaper in-stock store.`
+          : `Prices from the ${SNAPSHOT_DATE} Amazon.in snapshot.`}{" "}
+        Confirm on the listing before buying. Excludes monitor, peripherals and Windows.
+      </p>
     </Panel>
+  );
+}
+
+function checkedAgo(iso: string) {
+  const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (minutes < 1) return "just now";
+  return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(-minutes < -59 ? -Math.round(minutes / 60) : -minutes, minutes > 59 ? "hour" : "minute");
+}
+
+function PriceSource({ status, onRefresh }: { status: PriceStatus | null; onRefresh: () => void }) {
+  if (!status) return null;
+  const { book, refreshing, progress, error } = status;
+  const message = refreshing
+    ? `Checking live prices on Amazon.in and Flipkart${progress ? ` · ${progress.done} of ${progress.total}` : ""}`
+    : book
+      ? `Live prices · checked ${checkedAgo(book.checkedAt)}`
+      : `Using the ${SNAPSHOT_DATE} price snapshot`;
+
+  return (
+    <div className="flex flex-col gap-1.5 rounded-xl bg-surface px-3.5 py-3 text-[13px]">
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex items-center gap-2">
+          <span
+            aria-hidden="true"
+            className={clsx("size-1.5 shrink-0 rounded-full", refreshing ? "bg-busy motion-safe:animate-pulse" : book ? "bg-success" : "bg-bar")}
+          />
+          <span role="status">{message}</span>
+        </span>
+        {!refreshing && (
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="-my-1 -mr-1.5 inline-flex min-h-8 items-center rounded-lg px-1.5 text-fg-secondary transition-colors duration-150 hover:text-fg"
+          >
+            Refresh prices
+          </button>
+        )}
+      </div>
+      {error && !refreshing && <p className="text-pretty text-danger">{error}</p>}
+    </div>
   );
 }
