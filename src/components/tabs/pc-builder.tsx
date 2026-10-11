@@ -157,7 +157,7 @@ export function PcBuilderTab() {
   const build = plan?.builds[selectedIndex];
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
       <Panel aria-labelledby="pc-heading" className="self-start">
         <form
           className="flex flex-col gap-4"
@@ -340,7 +340,7 @@ function PartsTable({ build, budget }: { build: Build; budget: number }) {
           Copy parts list
         </Button>
       </div>
-      <div className="overflow-x-auto rounded-2xl ring-1 ring-line">
+      <div className="relative overflow-x-auto rounded-2xl ring-1 ring-line">
         <table className="w-full min-w-[32rem] text-left text-sm">
           <thead className="bg-raised text-xs text-fg-tertiary">
             <tr>
