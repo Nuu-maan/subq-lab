@@ -18,10 +18,22 @@ export type Needs = {
 };
 
 export type PartKind = "CPU" | "Graphics card" | "Motherboard" | "Memory" | "Storage" | "Power supply" | "Case" | "CPU cooler";
-export type Part = { kind: PartKind; name: string; price: number; asin: string };
+export type Store = "amazon" | "flipkart";
+export type Offer = { store: Store; price: number; url: string; title: string; inStock: boolean };
+export type PriceBook = { checkedAt: string; offers: Record<string, Offer[]> };
+export type Part = {
+  kind: PartKind;
+  name: string;
+  price: number;
+  asin: string;
+  store: Store;
+  url: string;
+  live: boolean;
+  alternative?: { store: Store; price: number };
+};
 export type Build = { id: string; cpu: Cpu; gpu: Gpu; ramGb: number; parts: Part[]; total: number; score: number };
 
-export const PRICES_NOTE = "Prices are from Amazon.in on 11 Oct 2026 and change daily. Confirm the price on each listing before buying.";
+export const SNAPSHOT_DATE = "11 Oct 2026";
 
 export const amazonUrl = (asin: string) => `https://www.amazon.in/dp/${asin}`;
 
@@ -81,6 +93,19 @@ const CASES: Record<"airflow" | "showcase", Listed> = {
 
 const COOLER: Listed = { name: "Cooler Master Hyper 212 Spectrum V3 ARGB", price: 1865, asin: "B0BR5B1S3G" };
 
+export function catalog(): { kind: PartKind; item: Listed }[] {
+  return [
+    ...CPUS.map((item) => ({ kind: "CPU" as const, item })),
+    ...GPUS.map((item) => ({ kind: "Graphics card" as const, item })),
+    ...BOARDS.map((item) => ({ kind: "Motherboard" as const, item })),
+    ...RAMS.map((item) => ({ kind: "Memory" as const, item })),
+    ...Object.values(SSDS).map((item) => ({ kind: "Storage" as const, item })),
+    ...Object.values(PSUS).map((item) => ({ kind: "Power supply" as const, item })),
+    ...Object.values(CASES).map((item) => ({ kind: "Case" as const, item })),
+    { kind: "CPU cooler" as const, item: COOLER },
+  ];
+}
+
 export function requiredPsu(cpu: Cpu, gpu: Gpu): 650 | 750 | 850 {
   if (gpu.watts < 280) return 650;
   return cpu.tdp >= 120 ? 850 : 750;
@@ -97,26 +122,49 @@ export function rate(cpu: Cpu, gpu: Gpu, ramGb: number, needs: Needs) {
   return Math.round(score * 10) / 10;
 }
 
-function toPart(kind: PartKind, item: Listed): Part {
-  return { kind, name: item.listing ?? item.name, price: item.price, asin: item.asin };
+function shortTitle(title: string) {
+  const cut = title.split(/\s(?:\d+\s?GB\s)?GDDR|\s[|(]|,\s/)[0];
+  return cut.length > 72 ? `${cut.slice(0, 71)}…` : cut;
 }
 
-function assemble(cpu: Cpu, gpu: Gpu, ram: Ram, needs: Needs): Build | null {
-  const board = BOARDS.filter((b) => b.socket === cpu.socket && b.memory === ram.memory && (!needs.wifi || b.wifi)).sort(
-    (a, b) => a.price - b.price,
-  )[0];
+function toPart(kind: PartKind, item: Listed, book?: PriceBook): Part | null {
+  const name = item.listing ?? item.name;
+  const offers = book?.offers[item.asin];
+  if (!offers) return { kind, name, price: item.price, asin: item.asin, store: "amazon", url: amazonUrl(item.asin), live: false };
+
+  const [best, next] = offers.filter((offer) => offer.inStock).sort((a, b) => a.price - b.price);
+  if (!best) return null;
+  return {
+    kind,
+    name: best.store === "flipkart" && kind === "Graphics card" ? shortTitle(best.title) : name,
+    price: best.price,
+    asin: item.asin,
+    store: best.store,
+    url: best.url,
+    live: true,
+    alternative: next && next.store !== best.store ? { store: next.store, price: next.price } : undefined,
+  };
+}
+
+function assemble(cpu: Cpu, gpu: Gpu, ram: Ram, needs: Needs, book?: PriceBook): Build | null {
+  const board = BOARDS.filter((b) => b.socket === cpu.socket && b.memory === ram.memory && (!needs.wifi || b.wifi))
+    .map((item) => toPart("Motherboard", item, book))
+    .filter((part) => part !== null)
+    .sort((a, b) => a.price - b.price)[0];
   if (!board) return null;
 
-  const parts: Part[] = [
-    toPart("CPU", cpu),
-    toPart("Graphics card", gpu),
-    toPart("Motherboard", board),
-    toPart("Memory", ram),
-    toPart("Storage", SSDS[needs.storageTb]),
-    toPart("Power supply", PSUS[requiredPsu(cpu, gpu)]),
-    toPart("Case", CASES[needs.showcase ? "showcase" : "airflow"]),
-  ];
-  if (!cpu.coolerIncluded) parts.push(toPart("CPU cooler", COOLER));
+  const required = [
+    toPart("CPU", cpu, book),
+    toPart("Graphics card", gpu, book),
+    board,
+    toPart("Memory", ram, book),
+    toPart("Storage", SSDS[needs.storageTb], book),
+    toPart("Power supply", PSUS[requiredPsu(cpu, gpu)], book),
+    toPart("Case", CASES[needs.showcase ? "showcase" : "airflow"], book),
+    cpu.coolerIncluded ? undefined : toPart("CPU cooler", COOLER, book),
+  ].filter((part) => part !== undefined);
+  if (required.some((part) => part === null)) return null;
+  const parts = required as Part[];
 
   return {
     id: `${cpu.name}+${gpu.name}+${ram.gb}`,
@@ -129,8 +177,8 @@ function assemble(cpu: Cpu, gpu: Gpu, ram: Ram, needs: Needs): Build | null {
   };
 }
 
-export function solve(needs: Needs, budget: number, count = 3) {
-  const all = CPUS.flatMap((cpu) => GPUS.flatMap((gpu) => RAMS.map((ram) => assemble(cpu, gpu, ram, needs)))).filter(
+export function solve(needs: Needs, budget: number, book?: PriceBook, count = 3) {
+  const all = CPUS.flatMap((cpu) => GPUS.flatMap((gpu) => RAMS.map((ram) => assemble(cpu, gpu, ram, needs, book)))).filter(
     (build): build is Build => build !== null,
   );
   const ranked = all.filter((build) => build.total <= budget).sort((a, b) => b.score - a.score || a.total - b.total);
@@ -140,5 +188,5 @@ export function solve(needs: Needs, budget: number, count = 3) {
     if (builds.length === count) break;
     if (!builds.some((picked) => picked.gpu === build.gpu)) builds.push(build);
   }
-  return { builds, cheapest: Math.min(...all.map((build) => build.total)) };
+  return { builds, cheapest: all.length ? Math.min(...all.map((build) => build.total)) : null };
 }

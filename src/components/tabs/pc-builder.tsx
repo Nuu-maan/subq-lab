@@ -6,7 +6,7 @@ import { useState, type CSSProperties } from "react";
 import { toast } from "sonner";
 import { LiquidGauge } from "@/components/liquid-gauge";
 import { Button, Chip, Label, LiveStatus, Panel, SectionLabel, Split, TaskHeader, Waiting, fieldClass } from "@/components/ui";
-import { PRICES_NOTE, amazonUrl, solve, type Build, type Needs } from "@/lib/pc";
+import { SNAPSHOT_DATE, amazonUrl, solve, type Build, type Needs } from "@/lib/pc";
 import { certainty, type Answer, type ChoiceAnswer, type NoulAnswer, type Question, type ScoreAnswer } from "@/lib/subq";
 import { decide } from "@/lib/use-decide";
 
@@ -119,7 +119,7 @@ export function PcBuilderTab() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [plan, setPlan] = useState<Plan | null>(null);
   const [selected, setSelected] = useState("A");
-  const [shortfall, setShortfall] = useState<{ budget: number; cheapest: number } | null>(null);
+  const [shortfall, setShortfall] = useState<{ budget: number; cheapest: number | null } | null>(null);
 
   async function planBuild() {
     setPhase("reading");
@@ -219,8 +219,9 @@ export function PcBuilderTab() {
 
           {!pending && shortfall && (
             <Waiting title={`Nothing compatible fits ${formatInr(shortfall.budget)}`}>
-              The cheapest build for these needs costs {formatInr(shortfall.cheapest)}. Raise the budget or relax a requirement such as Wi-Fi or
-              storage.
+              {shortfall.cheapest === null
+                ? "No compatible build is in stock right now. Relax a requirement such as Wi-Fi or storage."
+                : `The cheapest build for these needs costs ${formatInr(shortfall.cheapest)}. Raise the budget or relax a requirement such as Wi-Fi or storage.`}
             </Waiting>
           )}
 
@@ -438,7 +439,8 @@ function PartsList({ build, budget }: { build: Build; budget: number }) {
         </div>
         <LiquidGauge value={build.total / budget} className="h-3 w-full rounded-full" />
       </div>
-      <p className="text-[13px] text-pretty text-fg-secondary">{PRICES_NOTE} Excludes monitor, peripherals and Windows.</p>
+      <p className="text-[13px] text-pretty text-fg-secondary">Prices are from Amazon.in on {SNAPSHOT_DATE} and change daily. Confirm the price on each listing before buying. Excludes monitor,
+        peripherals and Windows.</p>
     </Panel>
   );
 }
