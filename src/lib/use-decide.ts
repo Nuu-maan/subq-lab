@@ -6,6 +6,7 @@ import { activity } from "./activity";
 import { certainty, errorMessage, type DecideResponse } from "./subq";
 
 export type DecideResult = {
+  id: number;
   status: number;
   ms: number;
   data?: DecideResponse;
@@ -13,7 +14,10 @@ export type DecideResult = {
   error?: string;
 };
 
+let requests = 0;
+
 export async function decide(body: unknown): Promise<DecideResult> {
+  const id = ++requests;
   activity.start();
   const started = performance.now();
   try {
@@ -28,17 +32,17 @@ export async function decide(body: unknown): Promise<DecideResult> {
     if (!response.ok) {
       activity.fail();
       const detail = (raw as { detail?: { message?: string } } | null)?.detail?.message;
-      return { status: response.status, ms, raw, error: errorMessage(response.status, detail) };
+      return { id, status: response.status, ms, raw, error: errorMessage(response.status, detail) };
     }
 
     const data = raw as DecideResponse;
     const answers = Object.values(data.answers);
     const mean = answers.reduce((sum, answer) => sum + certainty(answer), 0) / Math.max(answers.length, 1);
     activity.finish(ms, data.usage.input_tokens + data.usage.output_tokens, mean);
-    return { status: response.status, ms, data, raw };
+    return { id, status: response.status, ms, data, raw };
   } catch {
     activity.fail();
-    return { status: 0, ms: 0, raw: null, error: errorMessage(0) };
+    return { id, status: 0, ms: 0, raw: null, error: errorMessage(0) };
   }
 }
 
