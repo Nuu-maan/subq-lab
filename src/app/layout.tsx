@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
-import { Backdrop } from "@/components/backdrop";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,16 +21,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col font-sans">
+      <body className="flex min-h-full flex-col font-sans text-ui">
         <a
           href="#main"
-          className="sr-only z-50 rounded-lg bg-accent px-4 py-2 font-medium text-on-accent focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
+          className="sr-only z-50 rounded-lg bg-solid px-3.5 py-2 text-[13px] font-medium text-on-solid focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
         >
           Skip to content
         </a>
-        <Backdrop />
         {children}
-        <Toaster theme="dark" position="bottom-right" closeButton />
+        <Toaster theme="system" position="bottom-center" closeButton />
       </body>
     </html>
   );
