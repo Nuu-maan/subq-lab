@@ -2,8 +2,8 @@ import clsx from "clsx";
 import type { ComponentProps, ReactNode } from "react";
 
 const buttonVariants = {
-  primary: "bg-accent text-on-accent hover:bg-[oklch(from_var(--color-accent)_calc(l+0.04)_c_h)]",
-  secondary: "bg-raised text-fg ring-1 ring-line hover:ring-line-strong",
+  primary: "bg-solid text-on-solid hover:opacity-90",
+  secondary: "bg-surface text-fg hover:bg-raised",
 };
 
 export function Button({
@@ -20,7 +20,7 @@ export function Button({
       disabled={disabled || pending}
       aria-busy={pending || undefined}
       className={clsx(
-        "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium whitespace-nowrap transition-[scale,background-color,box-shadow] duration-150 ease-out motion-safe:active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-70 disabled:active:scale-100",
+        "inline-flex min-h-9 items-center justify-center gap-2 rounded-lg px-3.5 text-[13px] font-medium whitespace-nowrap transition-[scale,background-color,opacity] duration-150 ease-out motion-safe:active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100",
         buttonVariants[variant],
         className,
       )}
@@ -35,37 +35,56 @@ export function Spinner() {
   return (
     <span
       aria-hidden="true"
-      className="size-4 shrink-0 rounded-full border-2 border-current border-t-transparent opacity-80 motion-safe:animate-spin"
+      className="size-3.5 shrink-0 rounded-full border-[1.5px] border-current border-t-transparent opacity-80 motion-safe:animate-spin"
     />
   );
 }
 
 export function Panel({ className, ...props }: ComponentProps<"section">) {
-  return (
-    <section
-      {...props}
-      className={clsx(
-        "min-w-0 rounded-[28px] bg-surface p-5 shadow-[inset_0_1px_0_0_oklch(1_0_0/0.06),0_24px_48px_-24px_oklch(0_0_0/0.7)] ring-1 ring-line backdrop-blur-xl",
-        className,
-      )}
-    />
-  );
+  return <section {...props} className={clsx("flex min-w-0 flex-col gap-5", className)} />;
 }
 
-export function PanelHeading({ id, title, description }: { id?: string; title: string; description?: ReactNode }) {
+export function SectionLabel({
+  id,
+  title,
+  count,
+  action,
+  level = 3,
+}: {
+  id?: string;
+  title: string;
+  count?: number;
+  action?: ReactNode;
+  level?: 2 | 3;
+}) {
+  const Heading = level === 2 ? "h2" : "h3";
   return (
-    <div className="flex flex-col gap-1">
-      <h2 id={id} className="text-lg font-semibold tracking-tight text-balance">{title}</h2>
-      {description && <p className="text-sm text-pretty text-fg-secondary">{description}</p>}
+    <div className="flex min-h-9 items-center justify-between gap-3 text-[13px] text-fg-secondary">
+      <Heading id={id} className="lowercase">
+        {title}
+        {count !== undefined && (
+          <>
+            <span aria-hidden="true" className="px-1.5 text-bar">
+              /
+            </span>
+            <span className="tabular-nums">{String(count).padStart(2, "0")}</span>
+          </>
+        )}
+      </Heading>
+      {action}
     </div>
   );
 }
 
+export function Intro({ children }: { children: ReactNode }) {
+  return <p className="max-w-[60ch] text-ui text-pretty text-fg-secondary">{children}</p>;
+}
+
 export const fieldClass =
-  "w-full rounded-lg bg-raised px-3 py-2.5 text-base text-fg ring-1 ring-line placeholder:text-fg-tertiary hover:ring-line-strong sm:text-sm";
+  "w-full rounded-xl bg-surface px-3.5 py-3 text-base text-fg placeholder:text-fg-secondary hover:bg-raised focus-visible:bg-canvas focus-visible:outline-offset-0 sm:text-ui";
 
 export function Label({ className, ...props }: ComponentProps<"label">) {
-  return <label {...props} className={clsx("text-sm font-medium text-fg-secondary", className)} />;
+  return <label {...props} className={clsx("text-[13px] font-medium text-fg", className)} />;
 }
 
 export function Chip({ selected, className, ...props }: ComponentProps<"button"> & { selected?: boolean }) {
@@ -75,8 +94,8 @@ export function Chip({ selected, className, ...props }: ComponentProps<"button">
       aria-pressed={selected}
       {...props}
       className={clsx(
-        "min-h-9 rounded-full px-3.5 text-sm transition-[scale,background-color,box-shadow] duration-150 ease-out motion-safe:active:scale-[0.96]",
-        selected ? "bg-accent-soft text-fg ring-1 ring-accent" : "bg-raised text-fg-secondary ring-1 ring-line hover:text-fg hover:ring-line-strong",
+        "min-h-8 rounded-full px-3 text-[13px] transition-[scale,background-color,color] duration-150 ease-out motion-safe:active:scale-[0.96]",
+        selected ? "bg-solid text-on-solid" : "bg-surface text-fg-secondary hover:bg-raised hover:text-fg",
         className,
       )}
     />
@@ -85,9 +104,9 @@ export function Chip({ selected, className, ...props }: ComponentProps<"button">
 
 export function EmptyState({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="flex min-h-48 flex-col items-center justify-center gap-1 rounded-2xl px-6 py-10 text-center ring-1 ring-line ring-inset">
-      <p className="font-medium">{title}</p>
-      <p className="max-w-sm text-sm text-pretty text-fg-secondary">{children}</p>
+    <div className="flex flex-col gap-1 rounded-2xl bg-surface px-5 py-6">
+      <p className="text-ui font-medium">{title}</p>
+      <p className="max-w-[52ch] text-[13px] text-pretty text-fg-secondary">{children}</p>
     </div>
   );
 }
