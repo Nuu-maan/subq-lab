@@ -51,14 +51,14 @@ export function ImagePicker({
           onDragLeave={() => setDragging(false)}
           onDrop={onDrop}
           className={clsx(
-            "flex min-h-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed px-4 py-6 text-center transition-[background-color,border-color] duration-150 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent",
-            dragging ? "border-accent bg-accent-soft" : "border-line-strong bg-raised hover:border-fg-tertiary",
+            "flex min-h-32 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed px-4 py-6 text-center transition-[background-color,border-color] duration-150 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-fg",
+            dragging ? "border-fg bg-raised" : "border-bar/60 bg-surface hover:bg-raised",
           )}
         >
-          <span className="text-sm">
-            Drop images here or <span className="font-medium text-accent underline underline-offset-4">browse</span>
+          <span className="text-ui">
+            Drop images here or <span className="font-medium underline decoration-bar underline-offset-4">browse</span>
           </span>
-          <span className="text-xs text-fg-tertiary">
+          <span className="text-[13px] text-fg-secondary">
             PNG, JPEG or WebP · {room} of {MAX_IMAGES} slots left · resized to 1280px
           </span>
           <input
@@ -81,13 +81,13 @@ export function ImagePicker({
               <img
                 src={image.url}
                 alt={image.name}
-                className="aspect-square w-full rounded-lg object-cover outline-1 -outline-offset-1 outline-white/10"
+                className="aspect-square w-full rounded-xl object-cover outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
               />
               <button
                 type="button"
                 onClick={() => remove(image)}
                 aria-label={`Remove ${image.name}`}
-                className="absolute top-1 right-1 grid size-8 place-items-center rounded-full bg-canvas/85 text-fg ring-1 ring-line backdrop-blur transition-[scale] duration-150 ease-out motion-safe:active:scale-[0.96]"
+                className="absolute top-1.5 right-1.5 grid size-7 place-items-center rounded-full bg-canvas/90 text-fg shadow-sm backdrop-blur transition-[scale] duration-150 ease-out motion-safe:active:scale-[0.96]"
               >
                 <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                   <path d="M4 4l8 8M12 4l-8 8" />
