@@ -42,7 +42,7 @@ export async function decide(body: unknown): Promise<DecideResult> {
   }
 }
 
-export function useDecide() {
+export function useDecide({ toastErrors = true } = {}) {
   const [result, setResult] = useState<DecideResult | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -51,9 +51,9 @@ export function useDecide() {
     const next = await decide(body);
     setPending(false);
     setResult(next);
-    if (next.error) toast.error(next.error, { duration: Infinity });
+    if (next.error && toastErrors) toast.error(next.error, { duration: Infinity });
     return next;
-  }, []);
+  }, [toastErrors]);
 
   return { result, pending, run };
 }
