@@ -7,7 +7,7 @@ A Next.js playground for the [SubQ Decisions API](https://docs.subq.ai/endpoints
 - **Vision**: up to four images, checked for PC hardware, content safety or product photo quality, plus your own yes/no question.
 - **Playground**: edit the raw `POST /v1/systemone` body and inspect the status code, latency, tokens and raw response.
 
-The header pond is a WebGL caustics shader. It speeds up while a request is in flight, warms or cools with the confidence of the last answer, and follows the system light or dark theme.
+A WebGL water simulation runs behind the whole app: clicks, typing, running requests and arriving answers all ripple it. Switching tasks grows a water bubble over the page and bursts it to reveal the next one, and the PC budget slider is a WebGL liquid gauge.
 
 ## Run it
 
