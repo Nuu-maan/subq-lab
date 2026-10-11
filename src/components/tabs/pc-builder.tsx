@@ -4,7 +4,8 @@ import NumberFlow from "@number-flow/react";
 import clsx from "clsx";
 import { useState, type CSSProperties } from "react";
 import { toast } from "sonner";
-import { Button, Chip, EmptyState, Intro, Label, LiveStatus, Panel, SectionLabel, fieldClass } from "@/components/ui";
+import { LiquidGauge } from "@/components/liquid-gauge";
+import { Button, Chip, Label, LiveStatus, Panel, SectionLabel, Split, TaskHeader, Waiting, fieldClass } from "@/components/ui";
 import { PRICES_NOTE, amazonUrl, solve, type Build, type Needs } from "@/lib/pc";
 import { certainty, type Answer, type ChoiceAnswer, type NoulAnswer, type Question, type ScoreAnswer } from "@/lib/subq";
 import { decide } from "@/lib/use-decide";
@@ -160,167 +161,217 @@ export function PcBuilderTab() {
   const only = plan?.builds.length === 1;
 
   return (
-    <div className="flex flex-col gap-12">
-      <Panel aria-labelledby="pc-heading">
-        <SectionLabel id="pc-heading" title="Your build" />
-        <Intro>
-          Describe what you play. SubQ reads your needs, a solver finds compatible builds under budget from real Amazon.in listings, then SubQ
-          picks the best fit.
-        </Intro>
-        <form
-          className="flex flex-col gap-5"
-          onSubmit={(event) => {
-            event.preventDefault();
-            planBuild();
-          }}
-        >
-          <div className="flex flex-col gap-1">
-            <div className="flex items-baseline justify-between gap-3">
-              <Label htmlFor="budget">Budget</Label>
-              <output htmlFor="budget" className="text-ui font-medium tabular-nums">
-                <NumberFlow value={budget} format={inr} locales="en-IN" />
-              </output>
+    <Split
+      input={
+        <>
+          <TaskHeader step="Task 01 · Hardware" title="Plan a gaming PC">
+            Describe what you play. SubQ reads your needs, a solver finds compatible builds from real Amazon.in listings, then SubQ picks the best
+            fit.
+          </TaskHeader>
+          <form
+            className="flex flex-col gap-6"
+            onSubmit={(event) => {
+              event.preventDefault();
+              planBuild();
+            }}
+          >
+            <BudgetSlider value={budget} onChange={setBudget} />
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="pc-request">What will you use it for?</Label>
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Example requests">
+                {PRESETS.map((preset) => (
+                  <Chip key={preset.label} selected={request === preset.text} onClick={() => setRequest(preset.text)}>
+                    {preset.label}
+                  </Chip>
+                ))}
+              </div>
+              <textarea
+                id="pc-request"
+                required
+                rows={5}
+                value={request}
+                onChange={(event) => setRequest(event.target.value)}
+                placeholder="Mostly AAA games at 1440p, some Valorant. Need Wi-Fi."
+                className={fieldClass}
+              />
             </div>
-            <input
-              id="budget"
-              type="range"
-              min={60000}
-              max={300000}
-              step={1000}
-              value={budget}
-              onChange={(event) => setBudget(Number(event.target.value))}
-              className="h-8 w-full cursor-pointer accent-solid"
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="pc-request">What will you use it for?</Label>
-            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Example requests">
-              {PRESETS.map((preset) => (
-                <Chip key={preset.label} selected={request === preset.text} onClick={() => setRequest(preset.text)}>
-                  {preset.label}
-                </Chip>
-              ))}
-            </div>
-            <textarea
-              id="pc-request"
-              required
-              rows={5}
-              value={request}
-              onChange={(event) => setRequest(event.target.value)}
-              placeholder="Mostly AAA games at 1440p, some Valorant. Need Wi-Fi."
-              className={fieldClass}
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button type="submit" variant="primary" pending={pending}>
+            <Button type="submit" variant="primary" pending={pending} className="self-start">
               Plan my build
             </Button>
-            {pending && (
-              <span className="text-[13px] text-fg-secondary">{phase === "reading" ? "Reading your request…" : "Comparing builds…"}</span>
-            )}
-          </div>
-        </form>
-      </Panel>
-
-      <LiveStatus>
-        {phase === "reading"
-          ? "Reading your request…"
-          : phase === "comparing"
-            ? "Comparing builds…"
-            : plan
-              ? only
-                ? "One build fits your budget."
-                : `SubQ picked option ${plan.pick.choice}.`
-              : ""}
-      </LiveStatus>
-
-      {shortfall && (
-        <EmptyState title={`Nothing compatible fits ${formatInr(shortfall.budget)}`}>
-          The cheapest build for these needs costs {formatInr(shortfall.cheapest)}. Raise the budget or relax a requirement such as Wi-Fi or storage.
-        </EmptyState>
-      )}
-
-      {!shortfall && !plan && (
-        <EmptyState title="No build planned yet">Set your budget, describe how you&rsquo;ll use the PC, then select Plan my build.</EmptyState>
-      )}
-
-      {!shortfall && plan && build && (
-        <>
-          <Panel aria-labelledby="pc-reading" aria-busy={pending}>
-            <SectionLabel id="pc-reading" title="How SubQ read you" count={plan.readings.length} />
-            <ul className="flex flex-wrap gap-1.5">
-              {plan.readings.map((reading, index) => (
-                <li
-                  key={reading.label}
-                  className="rise flex items-baseline gap-1.5 rounded-lg bg-surface px-2.5 py-1 text-[13px]"
-                  style={{ "--i": index } as CSSProperties}
-                >
-                  <span className="text-fg-secondary">{reading.label}</span>
-                  <span className="font-medium">{reading.value}</span>
-                  <span className="text-fg-secondary tabular-nums">{Math.round(reading.probability * 100)}%</span>
-                </li>
-              ))}
-            </ul>
-          </Panel>
-
-          <Panel aria-labelledby="pc-options">
-            <SectionLabel id="pc-options" title="Builds" count={plan.builds.length} />
-            {only && (
-              <Intro>Only one compatible build fits this budget at today&rsquo;s prices. Raise the budget or drop Wi-Fi to see alternatives.</Intro>
-            )}
-            <fieldset className="-mx-3 flex flex-col">
-              <legend className="sr-only">Choose a build</legend>
-              {plan.builds.map((option, index) => {
-                const letter = OPTIONS[index];
-                const fit = plan.pick.probabilities[letter] ?? 0;
-                const value = plan.value[letter];
-                const picked = plan.pick.choice === letter;
-                return (
-                  <label
-                    key={option.id}
-                    className="rise flex cursor-pointer items-center gap-3.5 rounded-xl px-3 py-3 transition-colors duration-150 hover:bg-surface has-checked:bg-surface has-focus-visible:outline-2 has-focus-visible:outline-fg"
-                    style={{ "--i": index + 2 } as CSSProperties}
-                  >
-                    <input
-                      type="radio"
-                      name="build"
-                      value={letter}
-                      checked={selected === letter}
-                      onChange={() => setSelected(letter)}
-                      className="sr-only"
-                    />
-                    <span
-                      aria-hidden="true"
-                      className={clsx(
-                        "grid size-9 shrink-0 place-items-center rounded-lg text-[13px] font-medium",
-                        selected === letter ? "bg-solid text-on-solid" : "bg-raised text-fg",
-                      )}
-                    >
-                      {letter}
-                    </span>
-                    <span className="flex min-w-0 flex-1 flex-col">
-                      <span className="flex flex-wrap items-center gap-x-2">
-                        <span className="text-ui font-medium">{option.gpu.name}</span>
-                        {picked && <span className="text-[13px] text-fg-secondary">{only ? "· only fit" : "· SubQ\u2019s pick"}</span>}
-                      </span>
-                      <span className="text-[13px] text-fg-secondary">
-                        {option.cpu.name} · {option.ramGb}GB · {value.legend[String(Math.round(value.score))].toLowerCase()} value
-                      </span>
-                    </span>
-                    <span className="flex shrink-0 flex-col items-end">
-                      <span className="text-ui font-medium tabular-nums">{formatInr(option.total)}</span>
-                      {!only && <span className="text-[13px] text-fg-secondary tabular-nums">{Math.round(fit * 100)}% fit</span>}
-                    </span>
-                  </label>
-                );
-              })}
-            </fieldset>
-          </Panel>
-
-          <PartsList build={build} budget={budget} />
+          </form>
         </>
-      )}
+      }
+      readout={
+        <>
+          <LiveStatus>
+            {phase === "reading"
+              ? "Reading your request…"
+              : phase === "comparing"
+                ? "Comparing builds…"
+                : plan
+                  ? only
+                    ? "One build fits your budget."
+                    : `SubQ picked option ${plan.pick.choice}.`
+                  : ""}
+          </LiveStatus>
+
+          {pending && <Progress phase={phase} />}
+
+          {!pending && shortfall && (
+            <Waiting title={`Nothing compatible fits ${formatInr(shortfall.budget)}`}>
+              The cheapest build for these needs costs {formatInr(shortfall.cheapest)}. Raise the budget or relax a requirement such as Wi-Fi or
+              storage.
+            </Waiting>
+          )}
+
+          {!pending && !shortfall && !plan && (
+            <Waiting title="No build planned yet">Set a budget, describe how you&rsquo;ll use the PC, then select Plan my build.</Waiting>
+          )}
+
+          {!pending && !shortfall && plan && build && (
+            <>
+              <Panel aria-labelledby="pc-reading">
+                <SectionLabel id="pc-reading" title="How SubQ read you" count={plan.readings.length} />
+                <ul className="flex flex-wrap gap-1.5">
+                  {plan.readings.map((reading, index) => (
+                    <li
+                      key={reading.label}
+                      className="rise flex items-baseline gap-1.5 rounded-lg bg-surface px-2.5 py-1 text-[13px]"
+                      style={{ "--i": index } as CSSProperties}
+                    >
+                      <span className="text-fg-secondary">{reading.label}</span>
+                      <span className="font-medium">{reading.value}</span>
+                      <span className="text-fg-secondary tabular-nums">{Math.round(reading.probability * 100)}%</span>
+                    </li>
+                  ))}
+                </ul>
+              </Panel>
+
+              <Panel aria-labelledby="pc-options">
+                <SectionLabel id="pc-options" title="Builds" count={plan.builds.length} />
+                {only && (
+                  <p className="text-[13px] text-pretty text-fg-secondary">
+                    Only one compatible build fits this budget at today&rsquo;s prices. Raise the budget or drop Wi-Fi to see alternatives.
+                  </p>
+                )}
+                <fieldset className="-mx-3 flex flex-col">
+                  <legend className="sr-only">Choose a build</legend>
+                  {plan.builds.map((option, index) => {
+                    const letter = OPTIONS[index];
+                    const fit = plan.pick.probabilities[letter] ?? 0;
+                    const value = plan.value[letter];
+                    const picked = plan.pick.choice === letter;
+                    return (
+                      <label
+                        key={option.id}
+                        className="rise flex cursor-pointer items-center gap-3.5 rounded-xl px-3 py-3 transition-colors duration-150 hover:bg-surface has-checked:bg-surface has-focus-visible:outline-2 has-focus-visible:outline-fg"
+                        style={{ "--i": index + 3 } as CSSProperties}
+                      >
+                        <input
+                          type="radio"
+                          name="build"
+                          value={letter}
+                          checked={selected === letter}
+                          onChange={() => setSelected(letter)}
+                          className="sr-only"
+                        />
+                        <span
+                          aria-hidden="true"
+                          className={clsx(
+                            "grid size-9 shrink-0 place-items-center rounded-lg text-[13px] font-medium transition-colors duration-150",
+                            selected === letter ? "bg-solid text-on-solid" : "bg-raised text-fg",
+                          )}
+                        >
+                          {letter}
+                        </span>
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="flex flex-wrap items-center gap-x-2">
+                            <span className="text-ui font-medium">{option.gpu.name}</span>
+                            {picked && (
+                              <span className="rounded-md bg-canvas px-1.5 text-[12px] text-fg-secondary">{only ? "Only fit" : "SubQ\u2019s pick"}</span>
+                            )}
+                          </span>
+                          <span className="text-[13px] text-fg-secondary">
+                            {option.cpu.name} · {option.ramGb}GB · {value.legend[String(Math.round(value.score))].toLowerCase()} value
+                          </span>
+                        </span>
+                        <span className="flex shrink-0 flex-col items-end">
+                          <span className="text-ui font-medium tabular-nums">{formatInr(option.total)}</span>
+                          {!only && <span className="text-[13px] text-fg-secondary tabular-nums">{Math.round(fit * 100)}% fit</span>}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </fieldset>
+              </Panel>
+
+              <PartsList build={build} budget={budget} />
+            </>
+          )}
+        </>
+      }
+    />
+  );
+}
+
+const BUDGET_MIN = 60000;
+const BUDGET_MAX = 300000;
+
+function BudgetSlider({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <Label htmlFor="budget">Budget</Label>
+        <output htmlFor="budget" className="text-[22px] leading-none font-medium tracking-[-0.02em] tabular-nums">
+          <NumberFlow value={value} format={inr} locales="en-IN" />
+        </output>
+      </div>
+      <div className="relative h-11 overflow-hidden rounded-xl has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-fg">
+        <LiquidGauge value={(value - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN)} className="absolute inset-0 size-full" />
+        <input
+          id="budget"
+          type="range"
+          min={BUDGET_MIN}
+          max={BUDGET_MAX}
+          step={1000}
+          value={value}
+          onChange={(event) => onChange(Number(event.target.value))}
+          className="absolute inset-0 size-full cursor-ew-resize opacity-0"
+        />
+      </div>
+      <div aria-hidden="true" className="flex justify-between text-[12px] text-fg-secondary tabular-nums">
+        <span>₹60k</span>
+        <span>₹1.8L</span>
+        <span>₹3L</span>
+      </div>
     </div>
+  );
+}
+
+const STEPS: { phase: Phase; label: string }[] = [
+  { phase: "reading", label: "Reading your request" },
+  { phase: "comparing", label: "Solving and comparing builds" },
+];
+
+function Progress({ phase }: { phase: Phase }) {
+  const current = STEPS.findIndex((step) => step.phase === phase);
+  return (
+    <ol aria-hidden="true" className="flex min-h-80 flex-col justify-center gap-4 rounded-3xl border border-dashed border-bar/50 px-8 py-12">
+      {STEPS.map((step, index) => (
+        <li key={step.phase} className={clsx("flex items-center gap-3 text-ui", index > current ? "text-fg-secondary" : "text-fg")}>
+          <span
+            className={clsx(
+              "size-2 rounded-full",
+              index < current && "bg-solid",
+              index === current && "bg-busy motion-safe:animate-pulse",
+              index > current && "bg-track",
+            )}
+          />
+          {step.label}
+          {index < current && <span className="text-[13px] text-fg-secondary">done</span>}
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -352,7 +403,7 @@ function PartsList({ build, budget }: { build: Build; budget: number }) {
       />
       <ul className="-mx-3 flex flex-col">
         {build.parts.map((part, index) => (
-          <li key={part.kind} className="rise" style={{ "--i": index } as CSSProperties}>
+          <li key={`${build.id}-${part.kind}`} className="rise" style={{ "--i": index + 5 } as CSSProperties}>
             <a
               href={amazonUrl(part.asin)}
               target="_blank"
@@ -365,7 +416,10 @@ function PartsList({ build, budget }: { build: Build; budget: number }) {
               </span>
               <span aria-hidden="true" className="hidden h-px min-w-6 flex-1 bg-line sm:block" />
               <span className="ml-auto shrink-0 text-ui tabular-nums sm:ml-0">{formatInr(part.price)}</span>
-              <span aria-hidden="true" className="shrink-0 text-[13px] text-fg-secondary transition-colors group-hover:text-fg">
+              <span
+                aria-hidden="true"
+                className="shrink-0 text-[13px] text-fg-secondary transition-[color,translate] duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-fg"
+              >
                 ↗
               </span>
               <span className="sr-only">View on Amazon.in (opens in a new tab)</span>
@@ -373,13 +427,16 @@ function PartsList({ build, budget }: { build: Build; budget: number }) {
           </li>
         ))}
       </ul>
-      <div className="flex items-baseline justify-between gap-3 border-t border-line pt-4">
-        <span className="text-[13px] text-fg-secondary">
-          Total · {formatInr(budget - build.total)} under budget
-        </span>
-        <span className="text-[17px] font-medium tabular-nums">
-          <NumberFlow value={build.total} format={inr} locales="en-IN" />
-        </span>
+      <div className="flex flex-col gap-3 rounded-2xl bg-surface p-5">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-[13px] text-fg-secondary">
+            Total · {formatInr(budget - build.total)} left of {formatInr(budget)}
+          </span>
+          <span className="text-[22px] leading-none font-medium tracking-[-0.02em] tabular-nums">
+            <NumberFlow value={build.total} format={inr} locales="en-IN" />
+          </span>
+        </div>
+        <LiquidGauge value={build.total / budget} className="h-3 w-full rounded-full" />
       </div>
       <p className="text-[13px] text-pretty text-fg-secondary">{PRICES_NOTE} Excludes monitor, peripherals and Windows.</p>
     </Panel>
