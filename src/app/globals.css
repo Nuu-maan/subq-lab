@@ -1,26 +1,84 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+
+  --slate-1: oklch(0.145 0.012 268);
+  --slate-2: oklch(0.19 0.014 268);
+  --slate-3: oklch(0.235 0.016 268);
+  --slate-9: oklch(0.68 0.014 268);
+  --slate-11: oklch(0.8 0.012 268);
+  --slate-12: oklch(0.97 0.004 268);
+  --cyan-9: oklch(0.84 0.13 192);
+  --cyan-12: oklch(0.22 0.045 205);
+  --red-9: oklch(0.74 0.16 25);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-canvas: var(--slate-1);
+  --color-surface: oklch(from var(--slate-2) l c h / 0.82);
+  --color-raised: oklch(from var(--slate-3) l c h / 0.92);
+  --color-line: oklch(1 0 0 / 0.08);
+  --color-line-strong: oklch(1 0 0 / 0.16);
+  --color-track: oklch(1 0 0 / 0.07);
+  --color-bar: oklch(1 0 0 / 0.3);
+  --color-fg: var(--slate-12);
+  --color-fg-secondary: var(--slate-11);
+  --color-fg-tertiary: var(--slate-9);
+  --color-accent: var(--cyan-9);
+  --color-accent-soft: oklch(from var(--cyan-9) l c h / 0.14);
+  --color-on-accent: var(--cyan-12);
+  --color-danger: var(--red-9);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-fg);
+}
+
+::selection {
+  background: oklch(from var(--cyan-9) l c h / 0.32);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}
+
+.bar {
+  transform-origin: left;
+  transform: scaleX(var(--p));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bar {
+    transition: transform 500ms var(--ease-out-strong);
+
+    @starting-style {
+      transform: scaleX(0);
+    }
+  }
+
+  .rise {
+    transition-property: opacity, translate;
+    transition-duration: 400ms;
+    transition-timing-function: var(--ease-out-strong);
+    transition-delay: calc(var(--i, 0) * 60ms);
+
+    @starting-style {
+      opacity: 0;
+      translate: 0 8px;
+    }
+  }
 }
