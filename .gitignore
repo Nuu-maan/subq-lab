@@ -45,3 +45,6 @@ next-env.d.ts
 .agents/
 AGENTS.md
 CLAUDE.md
+
+# live price cache
+/.cache/

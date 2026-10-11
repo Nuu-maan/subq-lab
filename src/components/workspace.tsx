@@ -7,6 +7,7 @@ import { bubbleTransition, captureGhost, finishBubble } from "@/lib/bubble";
 import { StatusPill } from "./status-pill";
 import { PcBuilderTab } from "./tabs/pc-builder";
 import { PlaygroundTab } from "./tabs/playground";
+import { ShopTab } from "./tabs/shop";
 import { TriageTab } from "./tabs/triage";
 import { VisionTab } from "./tabs/vision";
 
@@ -15,6 +16,7 @@ const TABS = [
   { value: "triage", label: "Triage", panel: <TriageTab /> },
   { value: "vision", label: "Vision", panel: <VisionTab /> },
   { value: "playground", label: "Playground", panel: <PlaygroundTab /> },
+  { value: "shop", label: "Shop agent", panel: <ShopTab /> },
 ];
 
 function Mark() {
@@ -63,7 +65,7 @@ export function Workspace() {
           </span>
           <Tabs.List
             aria-label="Tasks"
-            className="relative order-last grid w-full grid-cols-4 rounded-full bg-surface p-1 sm:order-none sm:mx-auto sm:flex sm:w-auto"
+            className="relative order-last flex w-full flex-wrap justify-center rounded-2xl bg-surface p-1 sm:order-none sm:mx-auto sm:w-auto sm:flex-nowrap sm:rounded-full"
           >
             {TABS.map((tab) => (
               <Tabs.Tab

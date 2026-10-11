@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { requiredPsu, solve, type Needs } from "./pc.ts";
+import { catalog, requiredPsu, solve, type Needs, type PriceBook } from "./pc.ts";
 
 const needs: Needs = {
   resolution: "1440p",
@@ -41,5 +41,39 @@ test("builds are ranked best first", () => {
 test("an impossible budget returns no builds and the cheapest total", () => {
   const { builds, cheapest } = solve(needs, 30000);
   assert.equal(builds.length, 0);
-  assert.ok(cheapest > 30000);
+  assert.ok(cheapest !== null && cheapest > 30000);
+});
+
+function bookFor(change: (asin: string, kind: string, price: number) => PriceBook["offers"][string]): PriceBook {
+  return {
+    checkedAt: new Date().toISOString(),
+    offers: Object.fromEntries(catalog().map(({ kind, item }) => [item.asin, change(item.asin, kind, item.price)])),
+  };
+}
+
+test("live prices pick the cheaper in-stock store", () => {
+  const book = bookFor((asin, _kind, price) => [
+    { store: "amazon", price, url: `https://www.amazon.in/dp/${asin}`, title: asin, inStock: true },
+    { store: "flipkart", price: price - 1000, url: `https://www.flipkart.com/p/${asin}`, title: `Flipkart ${asin}`, inStock: true },
+  ]);
+  for (const part of solve(needs, 200000, book).builds[0].parts) {
+    assert.equal(part.store, "flipkart");
+    assert.ok(part.live);
+    assert.deepEqual(part.alternative, { store: "amazon", price: part.price + 1000 });
+  }
+});
+
+test("parts out of stock everywhere are never used", () => {
+  const gone = new Set(catalog().filter(({ kind }) => kind === "Graphics card").slice(0, 3).map(({ item }) => item.asin));
+  const book = bookFor((asin, _kind, price) => [
+    { store: "amazon", price, url: `https://www.amazon.in/dp/${asin}`, title: asin, inStock: !gone.has(asin) },
+  ]);
+  for (const build of solve(needs, 300000, book).builds) assert.ok(!gone.has(build.gpu.asin));
+});
+
+test("a price book with no stock at all yields no builds", () => {
+  const book = bookFor((asin, _kind, price) => [
+    { store: "amazon", price, url: `https://www.amazon.in/dp/${asin}`, title: asin, inStock: false },
+  ]);
+  assert.deepEqual(solve(needs, 300000, book), { builds: [], cheapest: null });
 });
