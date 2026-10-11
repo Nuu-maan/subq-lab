@@ -148,16 +148,3 @@ export function Skeletons({ count = 4 }: { count?: number }) {
     </div>
   );
 }
-
-export function Intro({ children }: { children: ReactNode }) {
-  return <p className="max-w-[60ch] text-ui text-pretty text-fg-secondary">{children}</p>;
-}
-
-export function EmptyState({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1 rounded-2xl bg-surface px-5 py-6">
-      <p className="text-ui font-medium">{title}</p>
-      <p className="max-w-[52ch] text-[13px] text-pretty text-fg-secondary">{children}</p>
-    </div>
-  );
-}
