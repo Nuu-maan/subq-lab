@@ -76,36 +76,91 @@ body {
   }
 }
 
-.feather {
-  mask-image:
-    linear-gradient(to right, transparent, #000 7%, #000 93%, transparent),
-    linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
-  mask-composite: intersect;
-}
-
 .bar {
   transform-origin: left;
   transform: scaleX(var(--p));
 }
 
+.segment {
+  flex: 0 0 var(--basis);
+}
+
+.column {
+  height: calc(var(--h) * 100%);
+  transform-origin: bottom;
+}
+
+.marker {
+  left: calc(var(--x) * 100%);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .bar {
-    transition: transform 500ms var(--ease-out-strong);
+    transition: transform 600ms var(--ease-out-strong) 250ms;
 
     @starting-style {
       transform: scaleX(0);
     }
   }
 
+  .reveal {
+    transition-property: opacity, translate, filter;
+    transition-duration: 600ms;
+    transition-timing-function: var(--ease-out-strong);
+    transition-delay: calc(var(--i, 0) * 90ms);
+
+    @starting-style {
+      opacity: 0;
+      translate: 0 12px;
+      filter: blur(8px);
+    }
+  }
+
+  .segment {
+    transition: flex-basis 700ms var(--ease-out-strong) calc(220ms + var(--i, 0) * 60ms);
+
+    @starting-style {
+      flex-basis: 0%;
+    }
+  }
+
+  .column {
+    transition: scale 650ms var(--ease-out-strong) calc(250ms + var(--i, 0) * 70ms);
+
+    @starting-style {
+      scale: 1 0;
+    }
+  }
+
+  .marker {
+    transition: left 900ms cubic-bezier(0.34, 1.25, 0.64, 1) 500ms;
+
+    @starting-style {
+      left: 0%;
+    }
+  }
+
   .rise {
-    transition-property: opacity, translate;
-    transition-duration: 400ms;
+    transition-property: opacity, translate, filter;
+    transition-duration: 500ms;
     transition-timing-function: var(--ease-out-strong);
     transition-delay: calc(var(--i, 0) * 50ms);
 
     @starting-style {
       opacity: 0;
-      translate: 0 6px;
+      translate: 0 8px;
+      filter: blur(4px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .rise {
+    transition: opacity 200ms ease;
+
+    @starting-style {
+      opacity: 0;
     }
   }
 }
