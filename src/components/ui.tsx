@@ -76,10 +76,6 @@ export function SectionLabel({
   );
 }
 
-export function Intro({ children }: { children: ReactNode }) {
-  return <p className="max-w-[60ch] text-ui text-pretty text-fg-secondary">{children}</p>;
-}
-
 export const fieldClass =
   "w-full rounded-xl bg-surface px-3.5 py-3 text-base text-fg placeholder:text-fg-secondary hover:bg-raised focus-visible:bg-canvas focus-visible:outline-offset-0 sm:text-ui";
 
@@ -102,15 +98,6 @@ export function Chip({ selected, className, ...props }: ComponentProps<"button">
   );
 }
 
-export function EmptyState({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1 rounded-2xl bg-surface px-5 py-6">
-      <p className="text-ui font-medium">{title}</p>
-      <p className="max-w-[52ch] text-[13px] text-pretty text-fg-secondary">{children}</p>
-    </div>
-  );
-}
-
 export function LiveStatus({ children }: { children: ReactNode }) {
   return (
     <p role="status" className="sr-only">
@@ -122,4 +109,55 @@ export function LiveStatus({ children }: { children: ReactNode }) {
 export function humanize(key: string) {
   const spaced = key.replace(/[_-]+/g, " ");
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+export function Split({ input, readout }: { input: ReactNode; readout: ReactNode }) {
+  return (
+    <div className="grid grid-cols-1 gap-14 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:gap-20">
+      <div className="flex min-w-0 flex-col gap-7 lg:sticky lg:top-24 lg:self-start">{input}</div>
+      <div className="flex min-w-0 flex-col gap-10">{readout}</div>
+    </div>
+  );
+}
+
+export function TaskHeader({ step, title, children }: { step: string; title: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-[13px] text-fg-secondary lowercase">{step}</p>
+      <h2 className="text-[26px] leading-[1.1] font-medium tracking-[-0.03em] text-balance">{title}</h2>
+      <p className="text-ui text-pretty text-fg-secondary">{children}</p>
+    </div>
+  );
+}
+
+export function Waiting({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="flex min-h-80 flex-col items-center justify-center gap-1 rounded-3xl border border-dashed border-bar/50 px-6 py-12 text-center">
+      <p className="text-ui font-medium">{title}</p>
+      <p className="max-w-[44ch] text-[13px] text-pretty text-fg-secondary">{children}</p>
+    </div>
+  );
+}
+
+export function Skeletons({ count = 4 }: { count?: number }) {
+  return (
+    <div aria-hidden="true" className="grid gap-2 sm:grid-cols-2">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="h-44 rounded-2xl bg-surface motion-safe:animate-pulse" style={{ animationDelay: `${i * 120}ms` }} />
+      ))}
+    </div>
+  );
+}
+
+export function Intro({ children }: { children: ReactNode }) {
+  return <p className="max-w-[60ch] text-ui text-pretty text-fg-secondary">{children}</p>;
+}
+
+export function EmptyState({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1 rounded-2xl bg-surface px-5 py-6">
+      <p className="text-ui font-medium">{title}</p>
+      <p className="max-w-[52ch] text-[13px] text-pretty text-fg-secondary">{children}</p>
+    </div>
+  );
 }
