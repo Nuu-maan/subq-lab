@@ -1,37 +1,57 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  --slate-1: oklch(0.145 0.012 268);
-  --slate-2: oklch(0.19 0.014 268);
-  --slate-3: oklch(0.235 0.016 268);
-  --slate-9: oklch(0.68 0.014 268);
-  --slate-11: oklch(0.8 0.012 268);
-  --slate-12: oklch(0.97 0.004 268);
-  --cyan-9: oklch(0.84 0.13 192);
-  --cyan-12: oklch(0.22 0.045 205);
-  --red-9: oklch(0.74 0.16 25);
+  --gray-1: oklch(0.988 0 0);
+  --gray-2: oklch(0.966 0 0);
+  --gray-3: oklch(0.94 0 0);
+  --gray-4: oklch(0.91 0 0);
+  --gray-8: oklch(0.72 0 0);
+  --gray-11: oklch(0.5 0 0);
+  --gray-12: oklch(0.205 0 0);
+  --green-9: oklch(0.63 0.17 149);
+  --amber-9: oklch(0.72 0.16 70);
+  --red-11: oklch(0.52 0.19 27);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --gray-1: oklch(0.16 0 0);
+    --gray-2: oklch(0.205 0 0);
+    --gray-3: oklch(0.245 0 0);
+    --gray-4: oklch(0.29 0 0);
+    --gray-8: oklch(0.48 0 0);
+    --gray-11: oklch(0.72 0 0);
+    --gray-12: oklch(0.94 0 0);
+    --green-9: oklch(0.7 0.16 149);
+    --amber-9: oklch(0.78 0.14 70);
+    --red-11: oklch(0.72 0.16 25);
+  }
 }
 
 @theme inline {
-  --color-canvas: var(--slate-1);
-  --color-surface: oklch(from var(--slate-2) l c h / 0.74);
-  --color-raised: oklch(from var(--slate-3) l c h / 0.92);
-  --color-line: oklch(1 0 0 / 0.08);
-  --color-line-strong: oklch(1 0 0 / 0.16);
-  --color-track: oklch(1 0 0 / 0.07);
-  --color-bar: oklch(1 0 0 / 0.3);
-  --color-fg: var(--slate-12);
-  --color-fg-secondary: var(--slate-11);
-  --color-fg-tertiary: var(--slate-9);
-  --color-accent: var(--cyan-9);
-  --color-accent-soft: oklch(from var(--cyan-9) l c h / 0.14);
-  --color-on-accent: var(--cyan-12);
-  --color-danger: var(--red-9);
+  --color-canvas: var(--gray-1);
+  --color-surface: var(--gray-2);
+  --color-raised: var(--gray-3);
+  --color-line: var(--gray-4);
+  --color-track: var(--gray-4);
+  --color-bar: var(--gray-8);
+  --color-fg: var(--gray-12);
+  --color-fg-secondary: var(--gray-11);
+  --color-solid: var(--gray-12);
+  --color-on-solid: var(--gray-1);
+  --color-success: var(--green-9);
+  --color-busy: var(--amber-9);
+  --color-danger: var(--red-11);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --text-ui: 0.9375rem;
+  --text-ui--line-height: 1.6;
 
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
 }
@@ -42,11 +62,11 @@ body {
 }
 
 ::selection {
-  background: oklch(from var(--cyan-9) l c h / 0.32);
+  background: oklch(from var(--gray-12) l c h / 0.14);
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-fg);
   outline-offset: 2px;
 }
 
@@ -54,6 +74,13 @@ body {
   :focus-visible {
     outline-color: Highlight;
   }
+}
+
+.feather {
+  mask-image:
+    linear-gradient(to right, transparent, #000 7%, #000 93%, transparent),
+    linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
+  mask-composite: intersect;
 }
 
 .bar {
@@ -74,11 +101,11 @@ body {
     transition-property: opacity, translate;
     transition-duration: 400ms;
     transition-timing-function: var(--ease-out-strong);
-    transition-delay: calc(var(--i, 0) * 60ms);
+    transition-delay: calc(var(--i, 0) * 50ms);
 
     @starting-style {
       opacity: 0;
-      translate: 0 8px;
+      translate: 0 6px;
     }
   }
 }
