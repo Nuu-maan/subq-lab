@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AnswerCard, UsageLine } from "@/components/answers";
 import { ImagePicker } from "@/components/image-picker";
-import { Button, Chip, EmptyState, Label, LiveStatus, Panel, PanelHeading, fieldClass, humanize } from "@/components/ui";
+import { Button, Chip, EmptyState, Intro, Label, LiveStatus, Panel, SectionLabel, fieldClass, humanize } from "@/components/ui";
 import type { PickedImage } from "@/lib/image";
 import type { Question } from "@/lib/subq";
 import { useDecide } from "@/lib/use-decide";
@@ -106,8 +106,10 @@ export function VisionTab() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+    <div className="flex flex-col gap-12">
       <Panel aria-labelledby="vision-heading">
+        <SectionLabel id="vision-heading" title="Images" count={images.length || undefined} />
+        <Intro>Add up to four images and pick what SubQ should look for. Try a photo of your GPU or your current build.</Intro>
         <form
           className="flex flex-col gap-4"
           onSubmit={(event) => {
@@ -115,8 +117,7 @@ export function VisionTab() {
             submit();
           }}
         >
-          <PanelHeading id="vision-heading" title="Image checks" description="Add up to four images and pick what SubQ should look for." />
-          <div className="flex flex-wrap gap-2" role="group" aria-label="What to check">
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="What to check">
             {Object.entries(LENSES).map(([key, { label }]) => (
               <Chip key={key} selected={lens === key} onClick={() => setLens(key)}>
                 {label}
@@ -130,7 +131,11 @@ export function VisionTab() {
               setMissingImages(false);
             }}
           />
-          {missingImages && <p role="alert" className="-mt-1 text-sm text-danger">Add at least one image to run a check.</p>}
+          {missingImages && (
+            <p role="alert" className="-mt-1 text-[13px] text-danger">
+              Add at least one image to run a check.
+            </p>
+          )}
           <div className="flex flex-col gap-2">
             <Label htmlFor="vision-custom">Your own yes/no question (optional)</Label>
             <input
@@ -149,23 +154,21 @@ export function VisionTab() {
       </Panel>
 
       <Panel aria-labelledby="vision-results" aria-busy={pending}>
-        <h2 id="vision-results" className="sr-only">
-          Image check results
-        </h2>
         <LiveStatus>{pending ? "Checking images…" : result?.data ? "Image check results ready." : ""}</LiveStatus>
+        <SectionLabel
+          id="vision-results"
+          title="Result"
+          count={result?.data ? Object.keys(result.data.answers).length : undefined}
+          action={result?.data && <UsageLine ms={result.ms} tokens={result.data.usage.input_tokens + result.data.usage.output_tokens} />}
+        />
         {result?.data ? (
-          <div className="flex flex-col gap-3">
-            <div className="grid items-start gap-3 sm:grid-cols-2">
-              {Object.entries(result.data.answers).map(([key, answer], index) => (
-                <AnswerCard key={key} title={titles[key] || humanize(key)} answer={answer} labels={labels[key]} index={index} />
-              ))}
-            </div>
-            <UsageLine ms={result.ms} tokens={result.data.usage.input_tokens + result.data.usage.output_tokens} />
+          <div className="grid items-start gap-2 sm:grid-cols-2">
+            {Object.entries(result.data.answers).map(([key, answer], index) => (
+              <AnswerCard key={key} title={titles[key] || humanize(key)} answer={answer} labels={labels[key]} index={index} />
+            ))}
           </div>
         ) : (
-          <EmptyState title="No images checked yet">
-            Try a photo of your GPU or your current build with the PC parts check, or switch to content safety or product photo QA.
-          </EmptyState>
+          <EmptyState title="No images checked yet">Add an image above, choose a check, then select Check image.</EmptyState>
         )}
       </Panel>
     </div>
