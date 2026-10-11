@@ -30,7 +30,7 @@ export async function decide(body: unknown): Promise<DecideResult> {
     const raw: unknown = await response.json().catch(() => null);
 
     if (!response.ok) {
-      activity.fail();
+      activity.end();
       const detail = (raw as { detail?: { message?: string } } | null)?.detail?.message;
       return { id, status: response.status, ms, raw, error: errorMessage(response.status, detail) };
     }
@@ -41,7 +41,7 @@ export async function decide(body: unknown): Promise<DecideResult> {
     activity.finish(ms, data.usage.input_tokens + data.usage.output_tokens, mean);
     return { id, status: response.status, ms, data, raw };
   } catch {
-    activity.fail();
+    activity.end();
     return { id, status: 0, ms: 0, raw: null, error: errorMessage(0) };
   }
 }

@@ -21,7 +21,7 @@ export const activity = {
     return () => listeners.delete(listener);
   },
   start: () => set({ inFlight: current.inFlight + 1 }),
-  fail: () => set({ inFlight: current.inFlight - 1 }),
+  end: () => set({ inFlight: current.inFlight - 1 }),
   finish: (ms: number, tokens: number, confidence: number) =>
     set({
       inFlight: current.inFlight - 1,
