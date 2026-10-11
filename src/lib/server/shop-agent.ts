@@ -135,7 +135,7 @@ export async function createShopAgent() {
     systemPrompt: SYSTEM_PROMPT,
     middleware: [
       modelFallbackMiddleware(...fallbacks),
-      modelRetryMiddleware({ maxRetries: 1, initialDelayMs: 800 }),
+      modelRetryMiddleware({ maxRetries: 1, initialDelayMs: 800, onFailure: "error" }),
       modelCallLimitMiddleware({ runLimit: 8, exitBehavior: "end" }),
       toolCallLimitMiddleware({ runLimit: 10, exitBehavior: "continue" }),
       toolRetryMiddleware({ maxRetries: 1, initialDelayMs: 600, onFailure: "continue" }),
