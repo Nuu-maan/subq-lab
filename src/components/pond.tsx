@@ -14,6 +14,7 @@ uniform vec2 uRes;
 uniform float uTime;
 uniform float uEnergy;
 uniform float uConf;
+uniform float uDark;
 uniform vec2 uPointer;
 
 float hash(vec2 p) {
@@ -34,7 +35,7 @@ float fbm(vec2 p) {
   float v = 0.0;
   float a = 0.5;
   mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 4; i++) {
     v += a * noise(p);
     p = m * p;
     a *= 0.5;
@@ -42,29 +43,30 @@ float fbm(vec2 p) {
   return v;
 }
 
+float caustic(vec2 p, float t) {
+  vec2 warp = vec2(fbm(p + t * 0.6), fbm(p + vec2(5.2, 1.3) - t * 0.5));
+  float n = fbm(p * 1.7 + 2.2 * warp + t * 0.25);
+  return pow(1.0 - abs(n * 2.0 - 1.0), 7.0);
+}
+
 void main() {
   vec2 uv = gl_FragCoord.xy / uRes;
-  vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
-  float t = uTime * (0.035 + 0.09 * uEnergy);
+  vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y * 3.2;
+  float t = uTime * (0.12 + 0.35 * uEnergy);
 
-  vec2 q = vec2(fbm(p * 1.3 + t), fbm(p * 1.3 - t + 3.1));
-  vec2 r = vec2(fbm(p * 1.7 + 2.0 * q + vec2(1.7, 9.2) + t * 1.3),
-                fbm(p * 1.7 + 2.0 * q + vec2(8.3, 2.8) - t));
-  float f = fbm(p * 1.1 + 2.4 * r);
+  float light = caustic(p, t) * 0.7 + caustic(p * 1.9 + 3.7, t * 1.3) * 0.45;
+  float depth = smoothstep(0.35, 0.75, fbm(p * 0.45 + vec2(t * 0.05, 2.0)));
+  float ripple = exp(-6.0 * length(p - uPointer * 3.2));
 
-  vec3 deep = vec3(0.022, 0.024, 0.04);
-  vec3 violet = vec3(0.46, 0.3, 0.98);
-  vec3 signal = mix(vec3(0.98, 0.5, 0.28), vec3(0.22, 0.86, 0.92), smoothstep(0.45, 0.85, uConf));
+  vec3 calm = mix(vec3(0.62, 0.6, 0.5), vec3(0.5, 0.63, 0.57), smoothstep(0.45, 0.85, uConf));
+  vec3 col = mix(calm, calm * vec3(0.62, 0.7, 0.68), depth);
+  col += vec3(0.95, 1.0, 0.94) * light * (0.32 + 0.25 * uEnergy + 0.3 * ripple);
 
-  vec3 col = deep;
-  col = mix(col, violet * 0.62, smoothstep(0.3, 0.85, f) * 0.7);
-  col = mix(col, signal * 0.7, smoothstep(0.55, 0.95, length(r)) * (0.4 + 0.45 * uEnergy));
-  col += violet * exp(-3.2 * length(p - uPointer)) * 0.08;
+  vec3 night = mix(vec3(0.07, 0.09, 0.085), vec3(0.04, 0.06, 0.055), depth);
+  night += mix(vec3(0.32, 0.3, 0.24), vec3(0.24, 0.36, 0.32), smoothstep(0.45, 0.85, uConf)) * light * (0.7 + 0.5 * uEnergy + 0.5 * ripple);
+  col = mix(col, night, uDark);
 
-  vec2 v = uv - 0.5;
-  col *= 1.0 - 1.1 * dot(v, v);
-  col += (hash(gl_FragCoord.xy + fract(uTime)) - 0.5) * 0.022;
-
+  col += (hash(gl_FragCoord.xy + fract(uTime)) - 0.5) * 0.035;
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -76,12 +78,12 @@ function compile(gl: WebGLRenderingContext, type: number, source: string) {
   return shader;
 }
 
-export function Backdrop() {
+export function Pond() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
-    const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "low-power" });
+    const gl = canvas.getContext("webgl", { antialias: false, powerPreference: "low-power" });
     if (!gl) return;
 
     const program = gl.createProgram()!;
@@ -102,34 +104,31 @@ export function Backdrop() {
     const uTime = uniform("uTime");
     const uEnergy = uniform("uEnergy");
     const uConf = uniform("uConf");
+    const uDark = uniform("uDark");
     const uPointer = uniform("uPointer");
 
     const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
-    const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+    const darkScheme = matchMedia("(prefers-color-scheme: dark)");
+    const pointer = { x: 9, y: 9, tx: 9, ty: 9 };
     let energy = 0;
     let confidence = activity.get().confidence;
     let frame = 0;
+    let visible = true;
     const startedAt = performance.now();
-
-    const resize = () => {
-      canvas.width = Math.round(innerWidth * 0.5);
-      canvas.height = Math.round(innerHeight * 0.5);
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      draw(reduceMotion.matches ? 0 : performance.now());
-    };
 
     const draw = (now: number) => {
       const state = activity.get();
       const settle = reduceMotion.matches ? 1 : 0.04;
       energy += ((state.inFlight > 0 ? 1 : 0) - energy) * settle;
       confidence += (state.confidence - confidence) * settle;
-      pointer.x += (pointer.tx - pointer.x) * 0.05;
-      pointer.y += (pointer.ty - pointer.y) * 0.05;
+      pointer.x += (pointer.tx - pointer.x) * 0.08;
+      pointer.y += (pointer.ty - pointer.y) * 0.08;
 
       gl.uniform2f(uRes, canvas.width, canvas.height);
-      gl.uniform1f(uTime, reduceMotion.matches ? 12 : (now - startedAt) / 1000);
+      gl.uniform1f(uTime, reduceMotion.matches ? 20 : (now - startedAt) / 1000);
       gl.uniform1f(uEnergy, energy);
       gl.uniform1f(uConf, confidence);
+      gl.uniform1f(uDark, darkScheme.matches ? 1 : 0);
       gl.uniform2f(uPointer, pointer.x, pointer.y);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
@@ -141,35 +140,64 @@ export function Backdrop() {
 
     const start = () => {
       cancelAnimationFrame(frame);
-      if (reduceMotion.matches || document.hidden) draw(0);
+      if (reduceMotion.matches || document.hidden || !visible) draw(0);
       else frame = requestAnimationFrame(loop);
     };
 
-    const onPointer = (event: PointerEvent) => {
-      pointer.tx = (event.clientX - innerWidth / 2) / innerHeight;
-      pointer.ty = (innerHeight / 2 - event.clientY) / innerHeight;
+    const resize = () => {
+      const scale = Math.min(devicePixelRatio, 2) * 0.75;
+      canvas.width = Math.round(canvas.clientWidth * scale);
+      canvas.height = Math.round(canvas.clientHeight * scale);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      draw(reduceMotion.matches ? 0 : performance.now());
     };
 
+    const onPointer = (event: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      pointer.tx = (event.clientX - rect.left - rect.width / 2) / rect.height;
+      pointer.ty = (rect.height / 2 - (event.clientY - rect.top)) / rect.height;
+    };
+
+    const onLeave = () => {
+      pointer.tx = 9;
+      pointer.ty = 9;
+    };
+
+    const sizeObserver = new ResizeObserver(resize);
+    const viewObserver = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      start();
+    });
     const unsubscribe = activity.subscribe(() => {
       if (reduceMotion.matches) draw(0);
     });
 
-    resize();
-    start();
-    addEventListener("resize", resize);
-    addEventListener("pointermove", onPointer, { passive: true });
+    sizeObserver.observe(canvas);
+    viewObserver.observe(canvas);
+    canvas.addEventListener("pointermove", onPointer);
+    canvas.addEventListener("pointerleave", onLeave);
     document.addEventListener("visibilitychange", start);
     reduceMotion.addEventListener("change", start);
+    darkScheme.addEventListener("change", start);
 
     return () => {
       cancelAnimationFrame(frame);
       unsubscribe();
-      removeEventListener("resize", resize);
-      removeEventListener("pointermove", onPointer);
+      sizeObserver.disconnect();
+      viewObserver.disconnect();
+      canvas.removeEventListener("pointermove", onPointer);
+      canvas.removeEventListener("pointerleave", onLeave);
       document.removeEventListener("visibilitychange", start);
       reduceMotion.removeEventListener("change", start);
+      darkScheme.removeEventListener("change", start);
     };
   }, []);
 
-  return <canvas ref={canvasRef} aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 size-full" />;
+  return (
+    <canvas
+      ref={canvasRef}
+      aria-hidden="true"
+      className="feather block aspect-[16/7] w-full bg-[oklch(0.62_0.04_165)] dark:bg-[oklch(0.12_0.01_165)]"
+    />
+  );
 }
